@@ -4,7 +4,6 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local GameConfig = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("GameConfig"))
 local LavaSystem = require(script.Parent:WaitForChild("LavaSystem"))
 local RewardService = require(script.Parent:WaitForChild("RewardService"))
-local PlayerPositionService = require(script.Parent:WaitForChild("PlayerPositionService"))
 
 local gameState = ReplicatedStorage:FindFirstChild("GameState")
 
@@ -23,6 +22,7 @@ local currentRound = {}
 local roundActive = false
 local roundToken = 0
 local roundNumber = 0
+local roundStartPart = nil
 
 local function setState(state, timeLeft)
 	gameState:SetAttribute("State", state)
@@ -55,10 +55,6 @@ local function updatePlayersRemaining()
 	end
 
 	gameState:SetAttribute("PlayersRemaining", remaining)
-
-	if roundActive and remaining <= 0 then
-		LavaSystem.Stop()
-	end
 end
 
 local function updateHeight(player, data)
@@ -125,10 +121,6 @@ local function finalizePlayer(player, data, escaped)
 	player:SetAttribute("InRound", false)
 	player:SetAttribute("Escaped", escaped)
 
-	if not GameConfig.Rounds.AutoRequeue then
-		player:SetAttribute("WantToPlay", false)
-	end
-
 	if escaped then
 		addWins(player, GameConfig.Rewards.WinsPerEscape)
 
@@ -160,22 +152,19 @@ local function finalizePlayer(player, data, escaped)
 		)
 	end
 
-	local character = player.Character
-	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
-
-	if escaped or (humanoid and humanoid.Health > 0) then
-		task.defer(function()
-			PlayerPositionService.MoveToLobby(player)
-		end)
-	end
-
 	updatePlayersRemaining()
 end
 
 local function setupParticipant(player)
-	if not player:GetAttribute("DataLoaded")
-		or player:GetAttribute("IsAFK")
-		or not player:GetAttribute("WantToPlay") then
+	if not roundActive then
+		return
+	end
+
+	if currentRound[player] then
+		return
+	end
+
+	if not player:GetAttribute("DataLoaded") or player:GetAttribute("IsAFK") then
 		return
 	end
 
@@ -196,17 +185,6 @@ local function setupParticipant(player)
 	player:SetAttribute("Escaped", false)
 	player:SetAttribute("InRound", true)
 
-	if not PlayerPositionService.MoveToRoundStart(player) then
-		player:SetAttribute("InRound", false)
-		return
-	end
-
-	root = character:FindFirstChild("HumanoidRootPart")
-	if not root then
-		player:SetAttribute("InRound", false)
-		return
-	end
-
 	local data = {
 		startY = root.Position.Y,
 		maxHeight = 0,
@@ -223,6 +201,36 @@ local function setupParticipant(player)
 			finalizePlayer(player, data, false)
 		end
 	end)
+
+	updatePlayersRemaining()
+
+	print("🎮 " .. player.Name .. " começou a jogar esta ronda")
+end
+
+local function getPlayerFromPart(part)
+	local character = part and part:FindFirstAncestorOfClass("Model")
+	if not character then
+		return nil
+	end
+
+	return Players:GetPlayerFromCharacter(character)
+end
+
+local function registerPlayersStandingOnStart()
+	if not roundStartPart then
+		return
+	end
+
+	local seen = {}
+
+	for _, part in workspace:GetPartsInPart(roundStartPart) do
+		local player = getPlayerFromPart(part)
+
+		if player and not seen[player] then
+			seen[player] = true
+			setupParticipant(player)
+		end
+	end
 end
 
 local function cleanupRound()
@@ -266,9 +274,7 @@ local function getReadyPlayerCount()
 	local count = 0
 
 	for _, player in Players:GetPlayers() do
-		if player:GetAttribute("DataLoaded")
-			and not player:GetAttribute("IsAFK")
-			and player:GetAttribute("WantToPlay") then
+		if player:GetAttribute("DataLoaded") then
 			count += 1
 		end
 	end
@@ -299,17 +305,8 @@ local function runRound()
 	roundToken += 1
 	gameState:SetAttribute("RoundNumber", roundNumber)
 
-	for _, player in Players:GetPlayers() do
-		setupParticipant(player)
-	end
-
-	if next(currentRound) == nil then
-		setState("WaitingForPlayers", 0)
-		task.wait(1)
-		return
-	end
-
 	roundActive = true
+	registerPlayersStandingOnStart()
 	updatePlayersRemaining()
 
 	local thisRoundToken = roundToken
@@ -336,6 +333,29 @@ local function runRound()
 end
 
 task.spawn(function()
+	roundStartPart = workspace:WaitForChild(GameConfig.RoundStartPart)
+
+	if not roundStartPart:IsA("BasePart") then
+		warn("Workspace." .. GameConfig.RoundStartPart .. " precisa de ser uma Part/BasePart.")
+		return
+	end
+
+	roundStartPart.CanTouch = true
+	roundStartPart.CanQuery = true
+
+	roundStartPart.Touched:Connect(function(hit)
+		if not roundActive then
+			return
+		end
+
+		local player = getPlayerFromPart(hit)
+		if player then
+			setupParticipant(player)
+		end
+	end)
+end)
+
+task.spawn(function()
 	local finish = workspace:WaitForChild("Finish")
 
 	if not finish:IsA("BasePart") then
@@ -348,12 +368,7 @@ task.spawn(function()
 			return
 		end
 
-		local character = hit:FindFirstAncestorOfClass("Model")
-		if not character then
-			return
-		end
-
-		local player = Players:GetPlayerFromCharacter(character)
+		local player = getPlayerFromPart(hit)
 		if not player then
 			return
 		end
