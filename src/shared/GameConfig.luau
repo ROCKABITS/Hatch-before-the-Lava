@@ -4,20 +4,11 @@ return {
 	StartCountdown = 3,
 	PostRoundTime = 3,
 	HeightUpdateInterval = 0.10,
-
-	Rounds = {
-		AutoRequeue = true,
-	},
+	RoundStartPart = "RoundSpawn",
 
 	Data = {
 		StoreName = "HatchBeforeLava_PlayerData_v1",
 		AutosaveInterval = 60,
-	},
-
-	Spawns = {
-		Lobby = "LobbySpawn",
-		Round = "RoundSpawn",
-		OffsetY = 3,
 	},
 
 	AFK = {
