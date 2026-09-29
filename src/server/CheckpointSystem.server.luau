@@ -2,6 +2,7 @@ local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local GameConfig = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("GameConfig"))
+local RewardService = require(script.Parent:WaitForChild("RewardService"))
 
 local checkpointsFolder = workspace:FindFirstChild("Checkpoints")
 
@@ -13,15 +14,6 @@ if not checkpointsFolder then
 end
 
 local connected = {}
-
-local function getCoinsStat(player)
-	local leaderstats = player:FindFirstChild("leaderstats")
-	if not leaderstats then
-		return nil
-	end
-
-	return leaderstats:FindFirstChild("Coins")
-end
 
 local function getCheckpointNumber(part)
 	return tonumber(part.Name)
@@ -63,14 +55,11 @@ local function connectCheckpoint(part)
 			GameConfig.Checkpoints.BaseCoins
 			+ ((checkpointNumber - 1) * GameConfig.Checkpoints.CoinsPerCheckpoint)
 
-		local coins = getCoinsStat(player)
-		if coins then
-			coins.Value += reward
-		end
+		local awardedCoins = RewardService.AddCoins(player, reward)
 
 		player:SetAttribute(
 			"RoundCoins",
-			(player:GetAttribute("RoundCoins") or 0) + reward
+			(player:GetAttribute("RoundCoins") or 0) + awardedCoins
 		)
 
 		player:SetAttribute("LastCheckpoint", checkpointNumber)
@@ -80,7 +69,7 @@ local function connectCheckpoint(part)
 				"✅ %s chegou ao checkpoint %d (+%d Coins)",
 				player.Name,
 				checkpointNumber,
-				reward
+				awardedCoins
 			)
 		)
 	end)
