@@ -12,14 +12,16 @@ local generatedFolder
 local checkpointsFolder
 local roundSpawn
 local finishPart
-local baseOriginCFrame
+local baseOrigin
 
 local movingParts = {}
 local spinnerParts = {}
 local runtimeConnection
 
-local PLATFORM_COLOR = Color3.fromRGB(75, 65, 62)
-local PLATFORM_ACCENT = Color3.fromRGB(108, 92, 83)
+local PLATFORM_COLOR = Color3.fromRGB(76, 68, 64)
+local PLATFORM_ACCENT = Color3.fromRGB(112, 96, 86)
+local METAL_COLOR = Color3.fromRGB(115, 125, 140)
+local DANGER_COLOR = Color3.fromRGB(235, 82, 55)
 local CHECKPOINT_COLOR = Color3.fromRGB(80, 220, 255)
 local FINISH_COLOR = Color3.fromRGB(255, 220, 75)
 local START_COLOR = Color3.fromRGB(95, 215, 120)
@@ -37,11 +39,14 @@ local function ensureRuntimeConnection()
 
 			if part and part.Parent then
 				local offset = math.sin(now * data.speed + data.phase) * data.distance
-				part.CFrame = data.baseCFrame * CFrame.new(
-					data.axis.X * offset,
-					data.axis.Y * offset,
-					data.axis.Z * offset
-				)
+
+				part.CFrame =
+					data.baseCFrame
+					* CFrame.new(
+						data.axis.X * offset,
+						data.axis.Y * offset,
+						data.axis.Z * offset
+					)
 			end
 		end
 
@@ -99,8 +104,8 @@ local function ensureWorkspaceObjects()
 		error("Workspace.Finish precisa de ser uma Part/BasePart.")
 	end
 
-	if not baseOriginCFrame then
-		baseOriginCFrame = CFrame.new(roundSpawn.Position)
+	if not baseOrigin then
+		baseOrigin = roundSpawn.Position - Vector3.new(0, 3, 0)
 	end
 
 	roundSpawn.Anchored = true
@@ -193,8 +198,8 @@ end
 local function createCheckpoint(number, position)
 	local checkpoint = Instance.new("Part")
 	checkpoint.Name = tostring(number)
-	checkpoint.Size = Vector3.new(8, 0.5, 8)
-	checkpoint.CFrame = CFrame.new(position + Vector3.new(0, 1.1, 0))
+	checkpoint.Size = Vector3.new(9, 0.5, 9)
+	checkpoint.CFrame = CFrame.new(position + Vector3.new(0, 1.15, 0))
 	checkpoint.Anchored = true
 	checkpoint.CanCollide = false
 	checkpoint.CanTouch = true
@@ -217,7 +222,6 @@ local function createStartArea(origin)
 	)
 
 	addBillboard(startPlatform, "🌋 START", START_COLOR)
-
 	roundSpawn.CFrame = CFrame.new(origin + Vector3.new(0, 3, 0))
 end
 
@@ -255,99 +259,83 @@ local function addSpinner(part, baseCFrame, speed)
 	})
 end
 
-local function sectionSteps(current, yaw, random)
+-- Every floor is mostly horizontal. Height is gained between floors,
+-- so the obby spreads around a large footprint instead of becoming
+-- a straight vertical stack of platforms.
+
+local function floorJumpPads(startPosition, yaw, random)
 	local forward, right = directionVectors(yaw)
+	local current = startPosition
 
 	for index = 1, 5 do
-		local lateral = random:NextNumber(-1.6, 1.6)
-		current +=
-			forward * random:NextNumber(5.8, 6.8)
-			+ right * lateral
-			+ Vector3.new(0, 3, 0)
+		local side = random:NextNumber(-2.2, 2.2)
+		current =
+			startPosition
+			+ forward * (index * 6.2)
+			+ right * side
+			+ Vector3.new(0, random:NextNumber(-0.5, 0.7), 0)
 
-		makePlatform(current, Vector3.new(6, 1, 6), index % 2 == 0)
+		makePlatform(current, Vector3.new(5.2, 1, 5.2), index % 2 == 0)
 	end
 
-	return current
+	local finish = startPosition + forward * 37
+	makePlatform(finish, Vector3.new(9, 1, 9), false)
+
+	return finish
 end
 
-local function sectionZigZag(current, yaw)
+local function floorZigZag(startPosition, yaw)
 	local forward, right = directionVectors(yaw)
 
 	for index = 1, 6 do
 		local side = index % 2 == 0 and -1 or 1
+		local position =
+			startPosition
+			+ forward * (index * 5.3)
+			+ right * (side * 4.3)
 
-		current +=
-			forward * 4.5
-			+ right * (side * 4.8)
-			+ Vector3.new(0, 2.5, 0)
-
-		makePlatform(current, Vector3.new(5.5, 1, 5.5), index % 2 == 0)
+		makePlatform(position, Vector3.new(5.5, 1, 5.5), index % 2 == 0)
 	end
 
-	return current
+	local finish = startPosition + forward * 37
+	makePlatform(finish, Vector3.new(9, 1, 9), false)
+
+	return finish
 end
 
-local function sectionStairs(current, yaw)
+local function floorBeam(startPosition, yaw)
 	local forward = directionVectors(yaw)
+	local beamStart = startPosition + forward * 5
+	local beamEnd = startPosition + forward * 30
+	local midpoint = (beamStart + beamEnd) / 2
+	local distance = (beamEnd - beamStart).Magnitude
 
-	for index = 1, 7 do
-		current += forward * 4.6 + Vector3.new(0, 2.2, 0)
-		makePlatform(current, Vector3.new(7, 1, 5), index % 2 == 1)
-	end
-
-	return current
-end
-
-local function sectionTinyPlatforms(current, yaw, random)
-	local forward, right = directionVectors(yaw)
-
-	for index = 1, 6 do
-		local side = random:NextNumber(-2.8, 2.8)
-
-		current +=
-			forward * random:NextNumber(5.2, 6.0)
-			+ right * side
-			+ Vector3.new(0, 2.7, 0)
-
-		makePlatform(current, Vector3.new(4.2, 1, 4.2), index % 2 == 0)
-	end
-
-	return current
-end
-
-local function sectionBeam(current, yaw)
-	local forward = directionVectors(yaw)
-	local target = current + forward * 18 + Vector3.new(0, 8, 0)
-	local midpoint = (current + target) / 2
-	local distance = (target - current).Magnitude
-
-	local beam = makePart(
+	makePart(
 		"NarrowBeam",
-		Vector3.new(3, 1, distance),
-		CFrame.lookAt(midpoint, target),
-		PLATFORM_ACCENT,
+		Vector3.new(2.8, 1, distance),
+		CFrame.lookAt(midpoint, beamEnd),
+		METAL_COLOR,
 		Enum.Material.Metal
 	)
 
-	beam.CanCollide = true
+	local finish = startPosition + forward * 37
+	makePlatform(finish, Vector3.new(9, 1, 9), true)
 
-	current = target
-	makePlatform(current, Vector3.new(7, 1, 7), false)
-
-	return current
+	return finish
 end
 
-local function sectionMoving(current, yaw, random)
+local function floorMoving(startPosition, yaw, random)
 	local forward, right = directionVectors(yaw)
-	local moverPosition = current + forward * 7 + Vector3.new(0, 4, 0)
-	local landingPosition = current + forward * 14 + Vector3.new(0, 9, 0)
 
+	local first = startPosition + forward * 8
+	makePlatform(first, Vector3.new(7, 1, 7), false)
+
+	local moverPosition = startPosition + forward * 19
 	local mover = makePart(
 		"MovingPlatform",
-		Vector3.new(6, 1, 6),
+		Vector3.new(6.5, 1, 6.5),
 		CFrame.new(moverPosition),
-		Color3.fromRGB(120, 145, 180),
+		METAL_COLOR,
 		Enum.Material.Metal
 	)
 
@@ -355,58 +343,85 @@ local function sectionMoving(current, yaw, random)
 		mover,
 		mover.CFrame,
 		right,
-		3.5,
-		random:NextNumber(0.8, 1.15),
+		4,
+		random:NextNumber(0.85, 1.15),
 		random:NextNumber(0, math.pi * 2)
 	)
 
-	current = landingPosition
-	makePlatform(current, Vector3.new(8, 1, 8), true)
+	local third = startPosition + forward * 29
+	makePlatform(third, Vector3.new(7, 1, 7), true)
 
-	return current
+	local finish = startPosition + forward * 37
+	makePlatform(finish, Vector3.new(9, 1, 9), false)
+
+	return finish
 end
 
-local function sectionSpinner(current, yaw, random)
+local function floorSpinner(startPosition, yaw, random)
 	local forward = directionVectors(yaw)
-	local arena = current + forward * 8 + Vector3.new(0, 4, 0)
+	local arena = startPosition + forward * 19
 
-	makePlatform(arena, Vector3.new(13, 1, 13), false)
+	makePlatform(arena, Vector3.new(18, 1, 18), false)
 
 	local spinner = makePart(
 		"Spinner",
-		Vector3.new(15, 0.8, 1.3),
+		Vector3.new(19, 0.9, 1.4),
 		CFrame.new(arena + Vector3.new(0, 1.4, 0)),
-		Color3.fromRGB(235, 85, 55),
+		DANGER_COLOR,
 		Enum.Material.Neon
 	)
 
 	addSpinner(
 		spinner,
 		spinner.CFrame,
-		random:NextNumber(1.3, 2.0)
+		random:NextNumber(1.1, 1.7)
 	)
 
-	current = arena + forward * 10 + Vector3.new(0, 4, 0)
-	makePlatform(current, Vector3.new(7, 1, 7), true)
+	local finish = startPosition + forward * 38
+	makePlatform(finish, Vector3.new(9, 1, 9), true)
 
-	return current
+	return finish
 end
 
-local SECTION_BUILDERS = {
-	Steps = sectionSteps,
-	ZigZag = sectionZigZag,
-	Stairs = sectionStairs,
-	Tiny = sectionTinyPlatforms,
-	Beam = sectionBeam,
-	Moving = sectionMoving,
-	Spinner = sectionSpinner,
+local function floorSlalom(startPosition, yaw)
+	local forward, right = directionVectors(yaw)
+
+	for index = 1, 5 do
+		local side = index % 2 == 0 and -1 or 1
+		local center =
+			startPosition
+			+ forward * (index * 6)
+			+ right * (side * 3.6)
+
+		makePart(
+			"SlalomPad",
+			Vector3.new(8, 1, 4),
+			CFrame.new(center),
+			index % 2 == 0 and PLATFORM_ACCENT or PLATFORM_COLOR,
+			Enum.Material.Slate
+		)
+	end
+
+	local finish = startPosition + forward * 37
+	makePlatform(finish, Vector3.new(9, 1, 9), false)
+
+	return finish
+end
+
+local FLOOR_BUILDERS = {
+	JumpPads = floorJumpPads,
+	ZigZag = floorZigZag,
+	Beam = floorBeam,
+	Moving = floorMoving,
+	Spinner = floorSpinner,
+	Slalom = floorSlalom,
 }
 
-local EASY_SECTIONS = {"Steps", "ZigZag", "Stairs"}
-local ALL_SECTIONS = {"Steps", "ZigZag", "Stairs", "Tiny", "Beam", "Moving", "Spinner"}
+local EASY_FLOORS = {"JumpPads", "ZigZag", "Slalom"}
+local ALL_FLOORS = {"JumpPads", "ZigZag", "Beam", "Moving", "Spinner", "Slalom"}
 
-local function chooseSection(random, index, previous)
-	local pool = index <= 3 and EASY_SECTIONS or ALL_SECTIONS
+local function chooseFloor(random, floorNumber, previous)
+	local pool = floorNumber <= 2 and EASY_FLOORS or ALL_FLOORS
 	local choice
 
 	repeat
@@ -416,6 +431,53 @@ local function chooseSection(random, index, previous)
 	return choice
 end
 
+local function buildRise(startPosition, yaw, floorHeight)
+	local forward = directionVectors(yaw)
+	local stepCount = 5
+	local risePerStep = floorHeight / stepCount
+	local runPerStep = 3.4
+	local current = startPosition
+
+	for index = 1, stepCount do
+		current =
+			startPosition
+			+ forward * (index * runPerStep)
+			+ Vector3.new(0, index * risePerStep, 0)
+
+		makePlatform(
+			current,
+			Vector3.new(7, 1, 5),
+			index % 2 == 0
+		)
+	end
+
+	local landing =
+		startPosition
+		+ forward * ((stepCount + 1) * runPerStep)
+		+ Vector3.new(0, floorHeight, 0)
+
+	makePlatform(landing, Vector3.new(10, 1, 10), true)
+
+	return landing
+end
+
+local function addFloorMarker(floorNumber, position)
+	local marker = makePart(
+		"FloorMarker",
+		Vector3.new(1, 1, 1),
+		CFrame.new(position + Vector3.new(0, 4, 0)),
+		PLATFORM_COLOR,
+		Enum.Material.SmoothPlastic
+	)
+
+	marker.Transparency = 1
+	marker.CanCollide = false
+	marker.CanTouch = false
+	marker.CanQuery = false
+
+	addBillboard(marker, "FLOOR " .. floorNumber, Color3.new(1, 1, 1))
+end
+
 function ObbyGenerator.Generate(roundNumber)
 	ensureRuntimeConnection()
 	clearGenerated()
@@ -423,62 +485,67 @@ function ObbyGenerator.Generate(roundNumber)
 	local seed = os.time() + (roundNumber * 100003)
 	local random = Random.new(seed)
 
-	local origin = baseOriginCFrame.Position
+	local origin = baseOrigin
 	local current = origin
-	local yaw = math.rad(random:NextInteger(0, 3) * 90)
-	local previousSection
-	local sectionNames = {}
+	local initialYaw = math.rad(random:NextInteger(0, 3) * 90)
+	local turnDirection = random:NextNumber() < 0.5 and -1 or 1
+	local yaw = initialYaw
+	local previousFloor
+	local floorNames = {}
 
 	createStartArea(origin)
 
-	local sectionCount = GameConfig.Obby.SectionCount
+	local floorCount = GameConfig.Obby.FloorCount
+	local floorHeight = GameConfig.Obby.FloorHeight
 	local checkpointEvery = GameConfig.Obby.CheckpointEvery
 	local checkpointNumber = 0
 
-	for index = 1, sectionCount do
-		local sectionName = chooseSection(random, index, previousSection)
-		local builder = SECTION_BUILDERS[sectionName]
+	for floorNumber = 1, floorCount do
+		addFloorMarker(floorNumber, current)
+
+		local floorName = chooseFloor(random, floorNumber, previousFloor)
+		local builder = FLOOR_BUILDERS[floorName]
 
 		current = builder(current, yaw, random)
-		table.insert(sectionNames, sectionName)
-		previousSection = sectionName
+		table.insert(floorNames, floorName)
+		previousFloor = floorName
 
-		if index % checkpointEvery == 0 then
+		if floorNumber % checkpointEvery == 0 then
 			checkpointNumber += 1
 			createCheckpoint(checkpointNumber, current)
 		end
 
-		if index < sectionCount and random:NextNumber() < 0.40 then
-			local turn = random:NextNumber() < 0.5 and -1 or 1
-			yaw += math.rad(90 * turn)
+		if floorNumber < floorCount then
+			current = buildRise(current, yaw, floorHeight)
+			yaw += math.rad(90 * turnDirection)
 		end
 	end
 
 	local forward = directionVectors(yaw)
-	current += forward * 7 + Vector3.new(0, 4, 0)
-	makePlatform(current, Vector3.new(8, 1, 8), true)
+	local finishPosition = current + forward * 8
+	makePlatform(finishPosition, Vector3.new(15, 1, 15), true)
+	createFinish(finishPosition + Vector3.new(0, 0.65, 0))
 
-	local finishPosition = current + forward * 7 + Vector3.new(0, 3, 0)
-	createFinish(finishPosition)
+	local totalHeight = math.floor(finishPosition.Y - origin.Y)
 
 	workspace:SetAttribute("CurrentObbySeed", seed)
-	workspace:SetAttribute("CurrentObbyHeight", math.floor(finishPosition.Y - origin.Y))
+	workspace:SetAttribute("CurrentObbyHeight", totalHeight)
 
 	print(
 		string.format(
-			"🧱 Generated obby for round %d | seed=%d | height=%dm | %s",
+			"🧱 Generated round %d | seed=%d | height=%dm | %s",
 			roundNumber,
 			seed,
-			math.floor(finishPosition.Y - origin.Y),
-			table.concat(sectionNames, " > ")
+			totalHeight,
+			table.concat(floorNames, " > ")
 		)
 	)
 
 	return {
 		Seed = seed,
-		Height = math.floor(finishPosition.Y - origin.Y),
+		Height = totalHeight,
 		FinishY = finishPosition.Y,
-		Sections = sectionNames,
+		Sections = floorNames,
 		CheckpointCount = checkpointNumber,
 	}
 end
