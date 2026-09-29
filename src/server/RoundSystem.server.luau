@@ -160,6 +160,10 @@ local function finalizePlayer(player, data, escaped)
 end
 
 local function setupParticipant(player)
+	if not player:GetAttribute("DataLoaded") then
+		return
+	end
+
 	local character = player.Character
 	if not character then
 		return
@@ -232,8 +236,20 @@ local function countdown(state, seconds)
 	setState(state, 0)
 end
 
+local function getReadyPlayerCount()
+	local count = 0
+
+	for _, player in Players:GetPlayers() do
+		if player:GetAttribute("DataLoaded") then
+			count += 1
+		end
+	end
+
+	return count
+end
+
 local function waitForPlayers()
-	while #Players:GetPlayers() < GameConfig.MinimumPlayers do
+	while getReadyPlayerCount() < GameConfig.MinimumPlayers do
 		setState("WaitingForPlayers", 0)
 		task.wait(1)
 	end
@@ -245,7 +261,7 @@ local function runRound()
 
 	countdown("Intermission", GameConfig.IntermissionTime)
 
-	if #Players:GetPlayers() < GameConfig.MinimumPlayers then
+	if getReadyPlayerCount() < GameConfig.MinimumPlayers then
 		return
 	end
 
