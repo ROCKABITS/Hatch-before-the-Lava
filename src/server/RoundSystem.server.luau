@@ -4,6 +4,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local GameConfig = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("GameConfig"))
 local LavaSystem = require(script.Parent:WaitForChild("LavaSystem"))
 local RewardService = require(script.Parent:WaitForChild("RewardService"))
+local PlayerPositionService = require(script.Parent:WaitForChild("PlayerPositionService"))
 
 local gameState = ReplicatedStorage:FindFirstChild("GameState")
 
@@ -155,6 +156,15 @@ local function finalizePlayer(player, data, escaped)
 		)
 	end
 
+	local character = player.Character
+	local humanoid = character and character:FindFirstChildOfClass("Humanoid")
+
+	if escaped or (humanoid and humanoid.Health > 0) then
+		task.defer(function()
+			PlayerPositionService.MoveToLobby(player)
+		end)
+	end
+
 	updatePlayersRemaining()
 end
 
@@ -179,6 +189,17 @@ local function setupParticipant(player)
 	player:SetAttribute("RoundCoins", 0)
 	player:SetAttribute("Escaped", false)
 	player:SetAttribute("InRound", true)
+
+	if not PlayerPositionService.MoveToRoundStart(player) then
+		player:SetAttribute("InRound", false)
+		return
+	end
+
+	root = character:FindFirstChild("HumanoidRootPart")
+	if not root then
+		player:SetAttribute("InRound", false)
+		return
+	end
 
 	local data = {
 		startY = root.Position.Y,
