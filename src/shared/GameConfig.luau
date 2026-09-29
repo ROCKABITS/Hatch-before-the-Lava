@@ -21,6 +21,11 @@ return {
 		NormalUntil = 0.75,
 	},
 
+	Checkpoints = {
+		BaseCoins = 50,
+		CoinsPerCheckpoint = 25,
+	},
+
 	Rewards = {
 		CoinsPerMeter = 3,
 		WinCoins = 2500,
