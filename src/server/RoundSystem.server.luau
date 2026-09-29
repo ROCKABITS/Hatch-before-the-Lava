@@ -159,7 +159,7 @@ local function finalizePlayer(player, data, escaped)
 end
 
 local function setupParticipant(player)
-	if not player:GetAttribute("DataLoaded") then
+	if not player:GetAttribute("DataLoaded") or player:GetAttribute("IsAFK") then
 		return
 	end
 
@@ -239,7 +239,7 @@ local function getReadyPlayerCount()
 	local count = 0
 
 	for _, player in Players:GetPlayers() do
-		if player:GetAttribute("DataLoaded") then
+		if player:GetAttribute("DataLoaded") and not player:GetAttribute("IsAFK") then
 			count += 1
 		end
 	end
