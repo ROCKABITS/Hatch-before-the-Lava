@@ -6,7 +6,7 @@ return {
 	HeightUpdateInterval = 0.10,
 
 	Rounds = {
-		AutoRequeue = false,
+		AutoRequeue = true,
 	},
 
 	Data = {
