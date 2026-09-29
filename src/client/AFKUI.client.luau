@@ -18,7 +18,7 @@ local panel = Instance.new("Frame")
 panel.Name = "Panel"
 panel.AnchorPoint = Vector2.new(0.5, 1)
 panel.Position = UDim2.new(0.5, 0, 1, -90)
-panel.Size = UDim2.fromOffset(390, 92)
+panel.Size = UDim2.fromOffset(430, 126)
 panel.BackgroundColor3 = Color3.fromRGB(31, 34, 45)
 panel.BackgroundTransparency = 0.08
 panel.Visible = false
@@ -32,20 +32,29 @@ local title = Instance.new("TextLabel")
 title.BackgroundTransparency = 1
 title.Position = UDim2.fromOffset(16, 8)
 title.Size = UDim2.new(1, -32, 0, 34)
-title.Text = "💤 AFK FARM ACTIVE"
+title.Text = "💤 AFK FARMING"
 title.TextColor3 = Color3.fromRGB(255, 224, 92)
 title.TextSize = 24
 title.Font = Enum.Font.GothamBold
 title.Parent = panel
 
-local info = Instance.new("TextLabel")
-info.BackgroundTransparency = 1
-info.Position = UDim2.fromOffset(16, 42)
-info.Size = UDim2.new(1, -32, 0, 40)
-info.TextColor3 = Color3.new(1, 1, 1)
-info.TextSize = 18
-info.Font = Enum.Font.Gotham
-info.Parent = panel
+local accumulated = Instance.new("TextLabel")
+accumulated.BackgroundTransparency = 1
+accumulated.Position = UDim2.fromOffset(16, 43)
+accumulated.Size = UDim2.new(1, -32, 0, 32)
+accumulated.TextColor3 = Color3.new(1, 1, 1)
+accumulated.TextSize = 20
+accumulated.Font = Enum.Font.GothamBold
+accumulated.Parent = panel
+
+local rate = Instance.new("TextLabel")
+rate.BackgroundTransparency = 1
+rate.Position = UDim2.fromOffset(16, 77)
+rate.Size = UDim2.new(1, -32, 0, 34)
+rate.TextColor3 = Color3.fromRGB(160, 230, 160)
+rate.TextSize = 18
+rate.Font = Enum.Font.Gotham
+rate.Parent = panel
 
 local function update()
 	local isAFK = player:GetAttribute("IsAFK") == true
@@ -55,17 +64,29 @@ local function update()
 		return
 	end
 
-	local earned = player:GetAttribute("AFKCoinsEarned") or 0
+	local stored = player:GetAttribute("AFKCoinsStored") or 0
+	local perMinute = player:GetAttribute("AFKCoinsPerMinute") or 0
 	local perHour = player:GetAttribute("AFKCoinsPerHour") or 0
 
-	if perHour <= 0 then
-		info.Text = "Equip at least 1 pet to earn AFK Coins"
+	accumulated.Text = string.format("💰 Accumulated: %d Coins", stored)
+
+	if perMinute <= 0 then
+		rate.Text = "Equip at least 1 pet to start earning"
 	else
-		info.Text = string.format("+%d Coins this session   •   ~%d/hour", earned, perHour)
+		rate.Text = string.format(
+			"📈 Earning: +%.1f Coins/min   •   ~%d/hour",
+			perMinute,
+			perHour
+		)
 	end
 end
 
-for _, attribute in {"IsAFK", "AFKCoinsEarned", "AFKCoinsPerHour"} do
+for _, attribute in {
+	"IsAFK",
+	"AFKCoinsStored",
+	"AFKCoinsPerMinute",
+	"AFKCoinsPerHour",
+} do
 	player:GetAttributeChangedSignal(attribute):Connect(update)
 end
 
