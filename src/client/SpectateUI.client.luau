@@ -117,6 +117,9 @@ targetLabel.Parent = spectateBar
 
 local spectating = false
 local targetIndex = 1
+local resultDismissedRound = nil
+local resultTimerRound = nil
+local RESULT_VISIBLE_TIME = 5
 
 local function getActivePlayers()
 	local active = {}
@@ -205,6 +208,7 @@ local function updateResultPanel()
 		and not inRound
 		and lastPlayedRound == currentRound
 		and result ~= ""
+		and resultDismissedRound ~= currentRound
 
 	resultPanel.Visible = shouldShow
 
@@ -230,6 +234,19 @@ local function updateResultPanel()
 
 	local active = getActivePlayers()
 	spectateButton.Visible = #active > 0
+
+	if resultTimerRound ~= currentRound then
+		resultTimerRound = currentRound
+
+		task.delay(RESULT_VISIBLE_TIME, function()
+			if (gameState:GetAttribute("RoundNumber") or 0) ~= currentRound then
+				return
+			end
+
+			resultDismissedRound = currentRound
+			resultPanel.Visible = false
+		end)
+	end
 end
 
 spectateButton.Activated:Connect(function()
