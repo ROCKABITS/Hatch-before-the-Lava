@@ -3,6 +3,7 @@ return {
 	IntermissionTime = 15,
 	StartCountdown = 3,
 	PostRoundTime = 3,
+	HeightUpdateInterval = 0.10,
 
 	Lava = {
 		StartHeight = 1,
