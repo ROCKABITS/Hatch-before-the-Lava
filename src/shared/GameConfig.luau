@@ -5,6 +5,11 @@ return {
 	PostRoundTime = 3,
 	HeightUpdateInterval = 0.10,
 
+	Data = {
+		StoreName = "HatchBeforeLava_PlayerData_v1",
+		AutosaveInterval = 60,
+	},
+
 	Lava = {
 		StartHeight = 1,
 		MaxHeight = 255,
