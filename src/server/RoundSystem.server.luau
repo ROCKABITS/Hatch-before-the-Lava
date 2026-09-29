@@ -125,6 +125,10 @@ local function finalizePlayer(player, data, escaped)
 	player:SetAttribute("InRound", false)
 	player:SetAttribute("Escaped", escaped)
 
+	if not GameConfig.Rounds.AutoRequeue then
+		player:SetAttribute("WantToPlay", false)
+	end
+
 	if escaped then
 		addWins(player, GameConfig.Rewards.WinsPerEscape)
 
@@ -169,7 +173,9 @@ local function finalizePlayer(player, data, escaped)
 end
 
 local function setupParticipant(player)
-	if not player:GetAttribute("DataLoaded") or player:GetAttribute("IsAFK") then
+	if not player:GetAttribute("DataLoaded")
+		or player:GetAttribute("IsAFK")
+		or not player:GetAttribute("WantToPlay") then
 		return
 	end
 
@@ -260,7 +266,9 @@ local function getReadyPlayerCount()
 	local count = 0
 
 	for _, player in Players:GetPlayers() do
-		if player:GetAttribute("DataLoaded") and not player:GetAttribute("IsAFK") then
+		if player:GetAttribute("DataLoaded")
+			and not player:GetAttribute("IsAFK")
+			and player:GetAttribute("WantToPlay") then
 			count += 1
 		end
 	end
