@@ -4,7 +4,6 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 local GameConfig = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("GameConfig"))
 local LavaSystem = require(script.Parent:WaitForChild("LavaSystem"))
 local RewardService = require(script.Parent:WaitForChild("RewardService"))
-local ObbyGenerator = require(script.Parent:WaitForChild("ObbyGenerator"))
 
 local gameState = ReplicatedStorage:FindFirstChild("GameState")
 
@@ -299,12 +298,6 @@ end
 local function runRound()
 	LavaSystem.Reset()
 	cleanupRound()
-
-	local nextRoundNumber = roundNumber + 1
-	local obbyInfo = ObbyGenerator.Generate(nextRoundNumber)
-	gameState:SetAttribute("ObbySeed", obbyInfo.Seed)
-	gameState:SetAttribute("ObbyHeight", obbyInfo.Height)
-	LavaSystem.SetTargetTopY(obbyInfo.FinishY)
 
 	countdown("Intermission", GameConfig.IntermissionTime)
 
