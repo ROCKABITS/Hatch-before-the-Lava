@@ -10,6 +10,12 @@ return {
 		AutosaveInterval = 60,
 	},
 
+	Spawns = {
+		Lobby = "LobbySpawn",
+		Round = "RoundSpawn",
+		OffsetY = 3,
+	},
+
 	AFK = {
 		Enabled = true,
 		BaseCoinsPerMinute = 100,
