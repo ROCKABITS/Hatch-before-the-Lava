@@ -5,6 +5,10 @@ return {
 	PostRoundTime = 3,
 	HeightUpdateInterval = 0.10,
 
+	Rounds = {
+		AutoRequeue = false,
+	},
+
 	Data = {
 		StoreName = "HatchBeforeLava_PlayerData_v1",
 		AutosaveInterval = 60,
