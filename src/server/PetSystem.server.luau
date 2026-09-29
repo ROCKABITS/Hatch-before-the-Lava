@@ -266,7 +266,7 @@ hatchEgg.OnServerInvoke = function(player, eggId)
 	}
 end
 
-toggleEquipPet.OnServerInvoke = function(player, petId)
+toggleEquipPet.OnServerInvoke = function(player, petId, action)
 	if not player:GetAttribute("DataLoaded") then
 		return { Success = false, Message = "Data is still loading" }
 	end
@@ -275,9 +275,34 @@ toggleEquipPet.OnServerInvoke = function(player, petId)
 		return { Success = false, Message = "You do not own this pet" }
 	end
 
+	if action == "Equip" then
+		local success, message = equipPet(player, petId)
+
+		return {
+			Success = success,
+			Equipped = success,
+			Message = message,
+			EquippedCount = getEquippedCount(player, petId),
+		}
+	elseif action == "Unequip" then
+		local success = unequipOne(player, petId)
+
+		return {
+			Success = success,
+			Equipped = getEquippedCount(player, petId) > 0,
+			Message = success and nil or "This pet is not equipped",
+			EquippedCount = getEquippedCount(player, petId),
+		}
+	end
+
+	-- Legacy toggle behaviour for older clients.
 	if getEquippedCount(player, petId) > 0 then
 		unequipOne(player, petId)
-		return { Success = true, Equipped = false }
+		return {
+			Success = true,
+			Equipped = getEquippedCount(player, petId) > 0,
+			EquippedCount = getEquippedCount(player, petId),
+		}
 	end
 
 	local success, message = equipPet(player, petId)
@@ -285,6 +310,7 @@ toggleEquipPet.OnServerInvoke = function(player, petId)
 		Success = success,
 		Equipped = success,
 		Message = message,
+		EquippedCount = getEquippedCount(player, petId),
 	}
 end
 
