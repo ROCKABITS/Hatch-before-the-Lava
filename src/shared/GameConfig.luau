@@ -27,6 +27,7 @@ return {
 	Lava = {
 		StartHeight = 1,
 		MaxHeight = 210,
+		FinishMargin = 8,
 
 		CanCollide = false,
 		KillOnTouch = true,
