@@ -3,6 +3,7 @@ local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local GameConfig = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("GameConfig"))
 local LavaSystem = require(script.Parent:WaitForChild("LavaSystem"))
+local RewardService = require(script.Parent:WaitForChild("RewardService"))
 
 local gameState = ReplicatedStorage:FindFirstChild("GameState")
 
@@ -34,13 +35,6 @@ local function getLeaderstat(player, name)
 	end
 
 	return leaderstats:FindFirstChild(name)
-end
-
-local function addCoins(player, amount)
-	local coins = getLeaderstat(player, "Coins")
-	if coins then
-		coins.Value += amount
-	end
 end
 
 local function addWins(player, amount)
@@ -103,12 +97,14 @@ local function awardHeightCoins(player, data)
 
 	data.heightRewarded = true
 
-	local coinsEarned = math.floor(data.maxHeight * GameConfig.Rewards.CoinsPerMeter)
+	local baseCoins = math.floor(data.maxHeight * GameConfig.Rewards.CoinsPerMeter)
+	local coinsEarned = 0
 
-	if coinsEarned > 0 then
-		addCoins(player, coinsEarned)
+	if baseCoins > 0 then
+		coinsEarned = RewardService.AddCoins(player, baseCoins)
 	end
 
+	data.heightCoinsEarned = coinsEarned
 	player:SetAttribute("RoundCoins", (player:GetAttribute("RoundCoins") or 0) + coinsEarned)
 
 	return coinsEarned
@@ -130,28 +126,31 @@ local function finalizePlayer(player, data, escaped)
 
 	if escaped then
 		addWins(player, GameConfig.Rewards.WinsPerEscape)
-		addCoins(player, GameConfig.Rewards.WinCoins)
+
+		local winCoins = RewardService.AddCoins(player, GameConfig.Rewards.WinCoins)
 
 		player:SetAttribute(
 			"RoundCoins",
-			(player:GetAttribute("RoundCoins") or 0) + GameConfig.Rewards.WinCoins
+			(player:GetAttribute("RoundCoins") or 0) + winCoins
 		)
 
 		print(
 			string.format(
-				"🏆 %s ESCAPED! +%d Coins +%d Win(s)",
+				"🏆 %s ESCAPED! +%d Coins +%d Win(s) [x%.2f pets]",
 				player.Name,
-				GameConfig.Rewards.WinCoins,
-				GameConfig.Rewards.WinsPerEscape
+				winCoins,
+				GameConfig.Rewards.WinsPerEscape,
+				RewardService.GetPetMultiplier(player)
 			)
 		)
 	else
 		print(
 			string.format(
-				"💀 %s finished at %dm and earned %d Coins",
+				"💀 %s finished at %dm and earned %d height Coins [x%.2f pets]",
 				player.Name,
 				data.maxHeight,
-				math.floor(data.maxHeight * GameConfig.Rewards.CoinsPerMeter)
+				data.heightCoinsEarned or 0,
+				RewardService.GetPetMultiplier(player)
 			)
 		)
 	end
