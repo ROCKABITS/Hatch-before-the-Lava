@@ -10,6 +10,14 @@ return {
 		AutosaveInterval = 60,
 	},
 
+	AFK = {
+		Enabled = true,
+		BaseCoinsPerMinute = 100,
+		Efficiency = 0.25,
+		TickInterval = 5,
+		RequireEquippedPet = true,
+	},
+
 	Lava = {
 		StartHeight = 1,
 		MaxHeight = 255,
