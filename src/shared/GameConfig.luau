@@ -1,5 +1,8 @@
 return {
+	MinimumPlayers = 1,
 	IntermissionTime = 15,
+	StartCountdown = 3,
+	PostRoundTime = 3,
 
 	Lava = {
 		StartHeight = 1,
@@ -8,6 +11,9 @@ return {
 		SlowSpeed = 1.5,
 		NormalSpeed = 2.5,
 		FastSpeed = 4,
+
+		SlowUntil = 0.30,
+		NormalUntil = 0.75,
 	},
 
 	Rewards = {
