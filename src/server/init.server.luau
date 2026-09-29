@@ -1,0 +1,1 @@
+print("Hatch Before The Lava ligado ao Rojo!")
