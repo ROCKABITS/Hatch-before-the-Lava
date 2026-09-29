@@ -120,6 +120,9 @@ local function finalizePlayer(player, data, escaped)
 
 	player:SetAttribute("InRound", false)
 	player:SetAttribute("Escaped", escaped)
+	player:SetAttribute("RoundFinalHeight", data.maxHeight)
+	player:SetAttribute("RoundResult", escaped and "Escaped" or "Dead")
+	player:SetAttribute("LastPlayedRound", roundNumber)
 
 	if escaped then
 		addWins(player, GameConfig.Rewards.WinsPerEscape)
@@ -182,6 +185,9 @@ local function setupParticipant(player)
 
 	player:SetAttribute("RoundHeight", 0)
 	player:SetAttribute("RoundCoins", 0)
+	player:SetAttribute("RoundFinalHeight", 0)
+	player:SetAttribute("RoundResult", "")
+	player:SetAttribute("LastPlayedRound", roundNumber)
 	player:SetAttribute("Escaped", false)
 	player:SetAttribute("InRound", true)
 
