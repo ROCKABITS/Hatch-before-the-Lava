@@ -289,9 +289,19 @@ toggleEquipPet.OnServerInvoke = function(player, petId)
 end
 
 local function setupPlayer(player)
+	local initialized = false
+	local dataLoadedConnection
+
 	local function ready()
-		if not player:GetAttribute("DataLoaded") then
+		if initialized or player:GetAttribute("DataLoaded") ~= true then
 			return
+		end
+
+		initialized = true
+
+		if dataLoadedConnection then
+			dataLoadedConnection:Disconnect()
+			dataLoadedConnection = nil
 		end
 
 		validateEquipped(player)
@@ -316,12 +326,19 @@ local function setupPlayer(player)
 				recalculateMultiplier(player)
 			end)
 		end
+
+		-- Loaded equipped pets must immediately count toward rewards.
+		recalculateMultiplier(player)
 	end
 
-	if player:GetAttribute("DataLoaded") then
+	if player:GetAttribute("DataLoaded") == true then
 		ready()
 	else
-		player:GetAttributeChangedSignal("DataLoaded"):Once(ready)
+		dataLoadedConnection = player:GetAttributeChangedSignal("DataLoaded"):Connect(function()
+			if player:GetAttribute("DataLoaded") == true then
+				ready()
+			end
+		end)
 	end
 end
 
