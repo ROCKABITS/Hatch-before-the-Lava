@@ -66,6 +66,9 @@ local function createPlayerValues(player)
 	player:SetAttribute("Escaped", false)
 	player:SetAttribute("InRound", false)
 	player:SetAttribute("PetMultiplier", 1)
+	player:SetAttribute("IsAFK", false)
+	player:SetAttribute("AFKCoinsEarned", 0)
+	player:SetAttribute("AFKCoinsPerHour", 0)
 	player:SetAttribute("DataLoaded", false)
 end
 
