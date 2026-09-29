@@ -101,10 +101,6 @@ end
 
 checkpointsFolder.ChildAdded:Connect(connectCheckpoint)
 
-checkpointsFolder.ChildRemoved:Connect(function(child)
-	connected[child] = nil
-end)
-
 Players.PlayerAdded:Connect(setupPlayer)
 
 for _, player in Players:GetPlayers() do
