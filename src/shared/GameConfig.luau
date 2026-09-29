@@ -7,7 +7,8 @@ return {
 	RoundStartPart = "RoundSpawn",
 
 	Obby = {
-		SectionCount = 14,
+		FloorCount = 8,
+		FloorHeight = 14,
 		CheckpointEvery = 2,
 	},
 
