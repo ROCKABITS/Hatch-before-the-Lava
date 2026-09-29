@@ -105,7 +105,7 @@ local function ensureWorkspaceObjects()
 	end
 
 	if not baseOrigin then
-		baseOrigin = roundSpawn.Position - Vector3.new(0, 3, 0)
+		baseOrigin = roundSpawn.Position
 	end
 
 	roundSpawn.Anchored = true
