@@ -11,7 +11,6 @@ local startSize = lava.Size
 local startPosition = lava.Position
 local running = false
 local touchConnection = nil
-local targetHeight = GameConfig.Lava.MaxHeight
 
 local function applySettings()
 	lava.CanCollide = GameConfig.Lava.CanCollide
@@ -30,7 +29,7 @@ end
 local function getProgress()
 	local currentHeight = lava.Size.Y
 	local startHeight = startSize.Y
-	local maxHeight = targetHeight
+	local maxHeight = GameConfig.Lava.MaxHeight
 
 	if maxHeight <= startHeight then
 		return 1
@@ -80,22 +79,12 @@ function LavaSystem.GetHeight()
 	return lava.Size.Y
 end
 
-function LavaSystem.SetTargetTopY(topY)
-	if type(topY) ~= "number" then
-		return
-	end
-
-	local baseY = startPosition.Y - (startSize.Y / 2)
-	local margin = GameConfig.Lava.FinishMargin or 0
-	targetHeight = math.max(startSize.Y, (topY - baseY) + margin)
-end
-
 function LavaSystem.Start()
 	applySettings()
 	connectDamage()
 	running = true
 
-	while running and lava.Size.Y < targetHeight do
+	while running and lava.Size.Y < GameConfig.Lava.MaxHeight do
 		local deltaTime = RunService.Heartbeat:Wait()
 
 		local progress = getProgress()
@@ -104,7 +93,7 @@ function LavaSystem.Start()
 
 		increase = math.min(
 			increase,
-			targetHeight - lava.Size.Y
+			GameConfig.Lava.MaxHeight - lava.Size.Y
 		)
 
 		lava.Size += Vector3.new(0, increase, 0)
