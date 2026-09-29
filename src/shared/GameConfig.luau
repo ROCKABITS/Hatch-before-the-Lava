@@ -6,6 +6,11 @@ return {
 	HeightUpdateInterval = 0.10,
 	RoundStartPart = "RoundSpawn",
 
+	Obby = {
+		SectionCount = 14,
+		CheckpointEvery = 2,
+	},
+
 	Data = {
 		StoreName = "HatchBeforeLava_PlayerData_v1",
 		AutosaveInterval = 60,
@@ -21,11 +26,10 @@ return {
 
 	Lava = {
 		StartHeight = 1,
-		MaxHeight = 255,
+		MaxHeight = 210,
 
-		-- Test settings
-		CanCollide = true,
-		KillOnTouch = false,
+		CanCollide = false,
+		KillOnTouch = true,
 
 		SlowSpeed = 1.5,
 		NormalSpeed = 2.5,
