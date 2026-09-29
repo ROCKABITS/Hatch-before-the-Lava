@@ -12,6 +12,10 @@ local startPosition = lava.Position
 local running = false
 local touchConnection = nil
 
+local function applySettings()
+	lava.CanCollide = GameConfig.Lava.CanCollide
+end
+
 local function getSpeed(progress)
 	if progress < GameConfig.Lava.SlowUntil then
 		return GameConfig.Lava.SlowSpeed
@@ -40,6 +44,10 @@ local function connectDamage()
 	end
 
 	touchConnection = lava.Touched:Connect(function(hit)
+		if not GameConfig.Lava.KillOnTouch then
+			return
+		end
+
 		local character = hit:FindFirstAncestorOfClass("Model")
 		if not character then
 			return
@@ -54,6 +62,7 @@ end
 
 function LavaSystem.Reset()
 	running = false
+	applySettings()
 	lava.Size = startSize
 	lava.Position = startPosition
 end
@@ -71,6 +80,7 @@ function LavaSystem.GetHeight()
 end
 
 function LavaSystem.Start()
+	applySettings()
 	connectDamage()
 	running = true
 
@@ -93,6 +103,7 @@ function LavaSystem.Start()
 	running = false
 end
 
+applySettings()
 connectDamage()
 LavaSystem.Reset()
 
