@@ -477,6 +477,7 @@ function ObbyGenerator.Generate(roundNumber)
 	return {
 		Seed = seed,
 		Height = math.floor(finishPosition.Y - origin.Y),
+		FinishY = finishPosition.Y,
 		Sections = sectionNames,
 		CheckpointCount = checkpointNumber,
 	}
