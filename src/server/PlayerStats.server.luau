@@ -3,6 +3,7 @@ local DataStoreService = game:GetService("DataStoreService")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
 local GameConfig = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("GameConfig"))
+local PetConfig = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("PetConfig"))
 
 local PlayerStore = DataStoreService:GetDataStore(GameConfig.Data.StoreName)
 
@@ -10,6 +11,8 @@ local DEFAULT_DATA = {
 	Coins = 0,
 	Wins = 0,
 	BestHeight = 0,
+	PetInventory = {},
+	EquippedPets = {},
 }
 
 local saving = {}
@@ -29,24 +32,75 @@ local function ensureIntValue(parent, name, defaultValue)
 	return value
 end
 
-local function createPlayerValues(player)
-	local leaderstats = player:FindFirstChild("leaderstats")
+local function ensureFolder(parent, name)
+	local folder = parent:FindFirstChild(name)
 
-	if not leaderstats then
-		leaderstats = Instance.new("Folder")
-		leaderstats.Name = "leaderstats"
-		leaderstats.Parent = player
+	if folder and folder:IsA("Folder") then
+		return folder
 	end
 
+	folder = Instance.new("Folder")
+	folder.Name = name
+	folder.Parent = parent
+
+	return folder
+end
+
+local function clearChildren(parent)
+	for _, child in parent:GetChildren() do
+		child:Destroy()
+	end
+end
+
+local function createPlayerValues(player)
+	local leaderstats = ensureFolder(player, "leaderstats")
 	ensureIntValue(leaderstats, "Coins", DEFAULT_DATA.Coins)
 	ensureIntValue(leaderstats, "Wins", DEFAULT_DATA.Wins)
 	ensureIntValue(leaderstats, "BestHeight", DEFAULT_DATA.BestHeight)
+
+	ensureFolder(player, "PetInventory")
+	ensureFolder(player, "EquippedPets")
 
 	player:SetAttribute("RoundHeight", 0)
 	player:SetAttribute("RoundCoins", 0)
 	player:SetAttribute("Escaped", false)
 	player:SetAttribute("InRound", false)
+	player:SetAttribute("PetMultiplier", 1)
 	player:SetAttribute("DataLoaded", false)
+end
+
+local function applyPetData(player, data)
+	local inventoryFolder = ensureFolder(player, "PetInventory")
+	local equippedFolder = ensureFolder(player, "EquippedPets")
+
+	clearChildren(inventoryFolder)
+	clearChildren(equippedFolder)
+
+	if type(data.PetInventory) == "table" then
+		for petId, amount in pairs(data.PetInventory) do
+			if PetConfig.Pets[petId] and type(amount) == "number" and amount > 0 then
+				local value = Instance.new("IntValue")
+				value.Name = petId
+				value.Value = math.floor(amount)
+				value.Parent = inventoryFolder
+			end
+		end
+	end
+
+	if type(data.EquippedPets) == "table" then
+		for index, petId in ipairs(data.EquippedPets) do
+			if index > PetConfig.MaxEquipped then
+				break
+			end
+
+			if PetConfig.Pets[petId] then
+				local slot = Instance.new("StringValue")
+				slot.Name = tostring(index)
+				slot.Value = petId
+				slot.Parent = equippedFolder
+			end
+		end
+	end
 end
 
 local function applyData(player, data)
@@ -58,6 +112,8 @@ local function applyData(player, data)
 	leaderstats.Coins.Value = tonumber(data.Coins) or DEFAULT_DATA.Coins
 	leaderstats.Wins.Value = tonumber(data.Wins) or DEFAULT_DATA.Wins
 	leaderstats.BestHeight.Value = tonumber(data.BestHeight) or DEFAULT_DATA.BestHeight
+
+	applyPetData(player, data)
 end
 
 local function loadData(player)
@@ -74,6 +130,8 @@ local function loadData(player)
 	if success then
 		if type(result) == "table" then
 			applyData(player, result)
+		else
+			applyPetData(player, DEFAULT_DATA)
 		end
 
 		player:SetAttribute("DataLoaded", true)
@@ -81,8 +139,40 @@ local function loadData(player)
 	else
 		warn("Failed to load data for " .. player.Name .. ": " .. tostring(result))
 		warn("Using temporary default data for this session.")
+		applyPetData(player, DEFAULT_DATA)
 		player:SetAttribute("DataLoaded", true)
 	end
+end
+
+local function getPetData(player)
+	local inventory = {}
+	local equipped = {}
+
+	local inventoryFolder = player:FindFirstChild("PetInventory")
+	if inventoryFolder then
+		for _, value in inventoryFolder:GetChildren() do
+			if value:IsA("IntValue") and value.Value > 0 then
+				inventory[value.Name] = value.Value
+			end
+		end
+	end
+
+	local equippedFolder = player:FindFirstChild("EquippedPets")
+	if equippedFolder then
+		local slots = equippedFolder:GetChildren()
+
+		table.sort(slots, function(a, b)
+			return tonumber(a.Name) < tonumber(b.Name)
+		end)
+
+		for _, slot in slots do
+			if slot:IsA("StringValue") and PetConfig.Pets[slot.Value] then
+				table.insert(equipped, slot.Value)
+			end
+		end
+	end
+
+	return inventory, equipped
 end
 
 local function getCurrentData(player)
@@ -99,10 +189,14 @@ local function getCurrentData(player)
 		return nil
 	end
 
+	local inventory, equipped = getPetData(player)
+
 	return {
 		Coins = coins.Value,
 		Wins = wins.Value,
 		BestHeight = bestHeight.Value,
+		PetInventory = inventory,
+		EquippedPets = equipped,
 	}
 end
 
