@@ -304,6 +304,7 @@ local function runRound()
 	local obbyInfo = ObbyGenerator.Generate(nextRoundNumber)
 	gameState:SetAttribute("ObbySeed", obbyInfo.Seed)
 	gameState:SetAttribute("ObbyHeight", obbyInfo.Height)
+	LavaSystem.SetTargetTopY(obbyInfo.FinishY)
 
 	countdown("Intermission", GameConfig.IntermissionTime)
 
