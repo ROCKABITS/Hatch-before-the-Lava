@@ -39,7 +39,7 @@ local panel = Instance.new("Frame")
 panel.Name = "Panel"
 panel.AnchorPoint = Vector2.new(0.5, 0.5)
 panel.Position = UDim2.fromScale(0.5, 0.5)
-panel.Size = UDim2.fromOffset(560, 500)
+panel.Size = UDim2.fromOffset(610, 520)
 panel.BackgroundColor3 = Color3.fromRGB(28, 29, 38)
 panel.Visible = false
 panel.Parent = gui
@@ -103,7 +103,7 @@ result.Position = UDim2.fromOffset(20, 176)
 result.Size = UDim2.new(1, -40, 0, 38)
 result.Text = ""
 result.TextColor3 = Color3.new(1, 1, 1)
-result.TextSize = 20
+result.TextSize = 18
 result.Font = Enum.Font.GothamBold
 result.Parent = panel
 
@@ -134,9 +134,14 @@ padding.PaddingRight = UDim.new(0, 10)
 padding.Parent = list
 
 local refreshing = false
+local inventoryConnections = {}
+
+local function getEquippedFolder()
+	return player:FindFirstChild("EquippedPets")
+end
 
 local function getEquippedCount(petId)
-	local equipped = player:FindFirstChild("EquippedPets")
+	local equipped = getEquippedFolder()
 	if not equipped then
 		return 0
 	end
@@ -151,23 +156,56 @@ local function getEquippedCount(petId)
 	return count
 end
 
+local function getTotalEquipped()
+	local equipped = getEquippedFolder()
+	return equipped and #equipped:GetChildren() or 0
+end
+
+local function makeSmallButton(parent, text, position, background)
+	local button = Instance.new("TextButton")
+	button.Size = UDim2.fromOffset(46, 46)
+	button.Position = position
+	button.BackgroundColor3 = background
+	button.TextColor3 = Color3.new(1, 1, 1)
+	button.Text = text
+	button.TextScaled = true
+	button.Font = Enum.Font.GothamBold
+	button.Parent = parent
+
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, 10)
+	corner.Parent = button
+
+	return button
+end
+
 local function refresh()
 	if refreshing then
 		return
 	end
+
 	refreshing = true
 
-	multiplier.Text = string.format("Coin Multiplier: x%.2f   •   Equipped: %d/%d", player:GetAttribute("PetMultiplier") or 1, #(player:FindFirstChild("EquippedPets") and player.EquippedPets:GetChildren() or {}), PetConfig.MaxEquipped)
+	local totalEquipped = getTotalEquipped()
+
+	multiplier.Text = string.format(
+		"Coin Multiplier: x%.2f   •   Equipped: %d/%d",
+		player:GetAttribute("PetMultiplier") or 1,
+		totalEquipped,
+		PetConfig.MaxEquipped
+	)
 
 	for _, child in list:GetChildren() do
-		if child:IsA("TextButton") then
+		if child:IsA("Frame") and child.Name == "PetRow" then
 			child:Destroy()
 		end
 	end
 
 	local inventory = player:FindFirstChild("PetInventory")
+
 	if inventory then
 		local pets = inventory:GetChildren()
+
 		table.sort(pets, function(a, b)
 			return a.Name < b.Name
 		end)
@@ -175,29 +213,104 @@ local function refresh()
 		for index, value in ipairs(pets) do
 			if value:IsA("IntValue") and value.Value > 0 then
 				local pet = PetConfig.Pets[value.Name]
+
 				if pet then
-					local equippedCount = getEquippedCount(value.Name)
+					local petId = value.Name
+					local ownedCount = value.Value
+					local equippedCount = getEquippedCount(petId)
 
-					local button = Instance.new("TextButton")
-					button.Name = value.Name
-					button.LayoutOrder = index
-					button.Size = UDim2.new(1, 0, 0, 56)
-					button.BackgroundColor3 = equippedCount > 0 and Color3.fromRGB(75, 145, 80) or Color3.fromRGB(48, 50, 64)
-					button.TextColor3 = Color3.new(1, 1, 1)
-					button.TextSize = 18
-					button.Font = Enum.Font.GothamBold
-					button.Text = string.format("%s  x%d   [%s]   x%.2f Coins   •   Equipped: %d", pet.DisplayName, value.Value, pet.Rarity, pet.CoinMultiplier, equippedCount)
-					button.Parent = list
+					local row = Instance.new("Frame")
+					row.Name = "PetRow"
+					row.LayoutOrder = index
+					row.Size = UDim2.new(1, 0, 0, 68)
+					row.BackgroundColor3 = equippedCount > 0
+						and Color3.fromRGB(55, 92, 62)
+						or Color3.fromRGB(48, 50, 64)
+					row.Parent = list
 
-					local corner = Instance.new("UICorner")
-					corner.CornerRadius = UDim.new(0, 10)
-					corner.Parent = button
+					local rowCorner = Instance.new("UICorner")
+					rowCorner.CornerRadius = UDim.new(0, 10)
+					rowCorner.Parent = row
 
-					button.Activated:Connect(function()
-						local response = toggleEquipPet:InvokeServer(value.Name)
-						if response and not response.Success then
-							result.Text = response.Message or "Could not change pet"
+					local info = Instance.new("TextLabel")
+					info.BackgroundTransparency = 1
+					info.Position = UDim2.fromOffset(12, 6)
+					info.Size = UDim2.new(1, -132, 1, -12)
+					info.TextColor3 = Color3.new(1, 1, 1)
+					info.TextXAlignment = Enum.TextXAlignment.Left
+					info.TextYAlignment = Enum.TextYAlignment.Center
+					info.TextSize = 17
+					info.Font = Enum.Font.GothamBold
+					info.Text = string.format(
+						"%s  x%d  [%s]\nx%.2f Coins   •   Equipped: %d",
+						pet.DisplayName,
+						ownedCount,
+						pet.Rarity,
+						pet.CoinMultiplier,
+						equippedCount
+					)
+					info.Parent = row
+
+					local minus = makeSmallButton(
+						row,
+						"−",
+						UDim2.new(1, -106, 0.5, -23),
+						Color3.fromRGB(150, 65, 65)
+					)
+
+					local plus = makeSmallButton(
+						row,
+						"+",
+						UDim2.new(1, -54, 0.5, -23),
+						Color3.fromRGB(65, 145, 80)
+					)
+
+					minus.Active = equippedCount > 0
+					minus.AutoButtonColor = minus.Active
+					if not minus.Active then
+						minus.BackgroundColor3 = Color3.fromRGB(75, 75, 82)
+					end
+
+					plus.Active =
+						totalEquipped < PetConfig.MaxEquipped
+						and equippedCount < ownedCount
+					plus.AutoButtonColor = plus.Active
+					if not plus.Active then
+						plus.BackgroundColor3 = Color3.fromRGB(75, 75, 82)
+					end
+
+					minus.Activated:Connect(function()
+						if not minus.Active then
+							return
 						end
+
+						minus.Active = false
+						local response = toggleEquipPet:InvokeServer(petId, "Unequip")
+
+						if response and response.Success then
+							result.Text = "Unequipped " .. pet.DisplayName
+						else
+							result.Text = response and response.Message or "Could not unequip pet"
+						end
+
+						task.wait()
+						refresh()
+					end)
+
+					plus.Activated:Connect(function()
+						if not plus.Active then
+							return
+						end
+
+						plus.Active = false
+						local response = toggleEquipPet:InvokeServer(petId, "Equip")
+
+						if response and response.Success then
+							result.Text = "Equipped " .. pet.DisplayName
+						else
+							result.Text = response and response.Message or "Could not equip pet"
+						end
+
 						task.wait()
 						refresh()
 					end)
@@ -207,6 +320,14 @@ local function refresh()
 	end
 
 	refreshing = false
+end
+
+local function connectInventoryValue(value)
+	if not value:IsA("IntValue") or inventoryConnections[value] then
+		return
+	end
+
+	inventoryConnections[value] = value.Changed:Connect(refresh)
 end
 
 openButton.Activated:Connect(function()
@@ -241,8 +362,24 @@ task.spawn(function()
 	local inventory = player:WaitForChild("PetInventory")
 	local equipped = player:WaitForChild("EquippedPets")
 
-	inventory.ChildAdded:Connect(refresh)
-	inventory.ChildRemoved:Connect(refresh)
+	for _, value in inventory:GetChildren() do
+		connectInventoryValue(value)
+	end
+
+	inventory.ChildAdded:Connect(function(value)
+		connectInventoryValue(value)
+		refresh()
+	end)
+
+	inventory.ChildRemoved:Connect(function(value)
+		local connection = inventoryConnections[value]
+		if connection then
+			connection:Disconnect()
+			inventoryConnections[value] = nil
+		end
+		refresh()
+	end)
+
 	equipped.ChildAdded:Connect(refresh)
 	equipped.ChildRemoved:Connect(refresh)
 
