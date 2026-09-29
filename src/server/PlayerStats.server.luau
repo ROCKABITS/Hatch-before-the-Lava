@@ -67,7 +67,7 @@ local function createPlayerValues(player)
 	player:SetAttribute("InRound", false)
 	player:SetAttribute("PetMultiplier", 1)
 	player:SetAttribute("IsAFK", false)
-	player:SetAttribute("AFKCoinsStored", 0)
+	player:SetAttribute("AFKCoinsEarned", 0)
 	player:SetAttribute("AFKCoinsPerMinute", 0)
 	player:SetAttribute("AFKCoinsPerHour", 0)
 	player:SetAttribute("DataLoaded", false)
@@ -195,10 +195,8 @@ local function getCurrentData(player)
 
 	local inventory, equipped = getPetData(player)
 
-	local pendingAFKCoins = tonumber(player:GetAttribute("AFKCoinsStored")) or 0
-
 	return {
-		Coins = coins.Value + math.max(0, math.floor(pendingAFKCoins)),
+		Coins = coins.Value,
 		Wins = wins.Value,
 		BestHeight = bestHeight.Value,
 		PetInventory = inventory,
