@@ -20,9 +20,9 @@ DailyQuestConfig.Pool = {
 		Title = "Complete 3 rounds",
 		Target = 3,
 		Reward = {
-			Type = "Coins",
-			Amount = 750,
-			Display = "750 Coins",
+			Type = "CoinBoost",
+			Amount = 1,
+			Display = "1 Coin Boost",
 		},
 	},
 	{
@@ -53,9 +53,9 @@ DailyQuestConfig.Pool = {
 		Title = "Win 2 rounds",
 		Target = 2,
 		Reward = {
-			Type = "PetXPPotion",
+			Type = "PetXPBoost",
 			Amount = 1,
-			Display = "1 Pet XP Potion",
+			Display = "1 Pet XP Boost",
 		},
 	},
 }
