@@ -18,6 +18,14 @@ local DEFAULT_DATA = {
 
 local saving = {}
 
+local resetPlayerData = script.Parent:FindFirstChild("ResetPlayerData")
+
+if not resetPlayerData then
+	resetPlayerData = Instance.new("BindableFunction")
+	resetPlayerData.Name = "ResetPlayerData"
+	resetPlayerData.Parent = script.Parent
+end
+
 local function ensureIntValue(parent, name, defaultValue)
 	local value = parent:FindFirstChild(name)
 
@@ -244,6 +252,80 @@ local function saveData(player)
 		warn("Failed to save data for " .. player.Name .. ": " .. tostring(result))
 		return false
 	end
+end
+
+local function resetSessionValues(player)
+	local leaderstats = player:FindFirstChild("leaderstats")
+
+	if leaderstats then
+		local coins = leaderstats:FindFirstChild("Coins")
+		local wins = leaderstats:FindFirstChild("Wins")
+		local bestHeight = leaderstats:FindFirstChild("BestHeight")
+
+		if coins then
+			coins.Value = DEFAULT_DATA.Coins
+		end
+
+		if wins then
+			wins.Value = DEFAULT_DATA.Wins
+		end
+
+		if bestHeight then
+			bestHeight.Value = DEFAULT_DATA.BestHeight
+		end
+	end
+
+	applyPetData(player, DEFAULT_DATA)
+
+	player:SetAttribute("RoundHeight", 0)
+	player:SetAttribute("RoundCoins", 0)
+	player:SetAttribute("RoundFinalHeight", 0)
+	player:SetAttribute("RoundResult", "")
+	player:SetAttribute("LastPlayedRound", 0)
+	player:SetAttribute("Escaped", false)
+	player:SetAttribute("InRound", false)
+	player:SetAttribute("PetMultiplier", 1)
+	player:SetAttribute("IsAFK", false)
+	player:SetAttribute("AFKCoinsEarned", 0)
+	player:SetAttribute("AFKCoinsPerMinute", 0)
+	player:SetAttribute("AFKCoinsPerHour", 0)
+	player:SetAttribute("TutorialSeen", false)
+end
+
+resetPlayerData.OnInvoke = function(player)
+	if not player or player.Parent ~= Players then
+		return false, "Invalid player"
+	end
+
+	if player:GetAttribute("DataLoaded") ~= true then
+		return false, "Data is not loaded"
+	end
+
+	-- Stop new autosaves while any current save finishes.
+	player:SetAttribute("DataLoaded", false)
+
+	while saving[player] do
+		task.wait()
+	end
+
+	local key = "Player_" .. player.UserId
+
+	local success, result = pcall(function()
+		PlayerStore:RemoveAsync(key)
+	end)
+
+	if not success then
+		player:SetAttribute("DataLoaded", true)
+		return false, tostring(result)
+	end
+
+	resetSessionValues(player)
+
+	-- Re-enable normal saving. The next save will contain only clean/default data.
+	player:SetAttribute("DataLoaded", true)
+
+	print("🧹 Data reset for " .. player.Name)
+	return true
 end
 
 local function setupPlayer(player)
