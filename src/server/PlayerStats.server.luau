@@ -14,6 +14,10 @@ local DEFAULT_DATA = {
 	PetInventory = {},
 	EquippedPets = {},
 	TutorialSeen = false,
+	DailyRewardDay = 0,
+	LastDailyClaimDay = -1,
+	LuckBoosts = 0,
+	PetXPPotions = 0,
 }
 
 local saving = {}
@@ -83,6 +87,10 @@ local function createPlayerValues(player)
 	player:SetAttribute("AFKCoinsPerMinute", 0)
 	player:SetAttribute("AFKCoinsPerHour", 0)
 	player:SetAttribute("TutorialSeen", DEFAULT_DATA.TutorialSeen)
+	player:SetAttribute("DailyRewardDay", DEFAULT_DATA.DailyRewardDay)
+	player:SetAttribute("LastDailyClaimDay", DEFAULT_DATA.LastDailyClaimDay)
+	player:SetAttribute("LuckBoosts", DEFAULT_DATA.LuckBoosts)
+	player:SetAttribute("PetXPPotions", DEFAULT_DATA.PetXPPotions)
 	player:SetAttribute("DataLoaded", false)
 end
 
@@ -130,6 +138,10 @@ local function applyData(player, data)
 	leaderstats.Wins.Value = tonumber(data.Wins) or DEFAULT_DATA.Wins
 	leaderstats.BestHeight.Value = tonumber(data.BestHeight) or DEFAULT_DATA.BestHeight
 	player:SetAttribute("TutorialSeen", data.TutorialSeen == true)
+	player:SetAttribute("DailyRewardDay", tonumber(data.DailyRewardDay) or DEFAULT_DATA.DailyRewardDay)
+	player:SetAttribute("LastDailyClaimDay", tonumber(data.LastDailyClaimDay) or DEFAULT_DATA.LastDailyClaimDay)
+	player:SetAttribute("LuckBoosts", tonumber(data.LuckBoosts) or DEFAULT_DATA.LuckBoosts)
+	player:SetAttribute("PetXPPotions", tonumber(data.PetXPPotions) or DEFAULT_DATA.PetXPPotions)
 
 	applyPetData(player, data)
 end
@@ -216,6 +228,10 @@ local function getCurrentData(player)
 		PetInventory = inventory,
 		EquippedPets = equipped,
 		TutorialSeen = player:GetAttribute("TutorialSeen") == true,
+		DailyRewardDay = player:GetAttribute("DailyRewardDay") or DEFAULT_DATA.DailyRewardDay,
+		LastDailyClaimDay = player:GetAttribute("LastDailyClaimDay") or DEFAULT_DATA.LastDailyClaimDay,
+		LuckBoosts = player:GetAttribute("LuckBoosts") or DEFAULT_DATA.LuckBoosts,
+		PetXPPotions = player:GetAttribute("PetXPPotions") or DEFAULT_DATA.PetXPPotions,
 	}
 end
 
@@ -290,6 +306,10 @@ local function resetSessionValues(player)
 	player:SetAttribute("AFKCoinsPerMinute", 0)
 	player:SetAttribute("AFKCoinsPerHour", 0)
 	player:SetAttribute("TutorialSeen", false)
+	player:SetAttribute("DailyRewardDay", DEFAULT_DATA.DailyRewardDay)
+	player:SetAttribute("LastDailyClaimDay", DEFAULT_DATA.LastDailyClaimDay)
+	player:SetAttribute("LuckBoosts", DEFAULT_DATA.LuckBoosts)
+	player:SetAttribute("PetXPPotions", DEFAULT_DATA.PetXPPotions)
 end
 
 resetPlayerData.OnInvoke = function(player)
