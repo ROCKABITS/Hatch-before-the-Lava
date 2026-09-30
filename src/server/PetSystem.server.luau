@@ -26,6 +26,14 @@ end
 
 local random = Random.new()
 
+local function reportQuestProgress(player, progressType, amount)
+	local event = script.Parent:FindFirstChild("QuestProgress")
+
+	if event and event:IsA("BindableEvent") then
+		event:Fire(player, progressType, amount)
+	end
+end
+
 local function getInventoryFolder(player)
 	return player:FindFirstChild("PetInventory")
 end
@@ -254,6 +262,7 @@ hatchEgg.OnServerInvoke = function(player, eggId)
 
 	autoEquipIfPossible(player, petId)
 	recalculateMultiplier(player)
+	reportQuestProgress(player, "Eggs", 1)
 
 	local pet = PetConfig.Pets[petId]
 
