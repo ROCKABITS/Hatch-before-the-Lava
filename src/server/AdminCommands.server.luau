@@ -1,6 +1,8 @@
 local Players = game:GetService("Players")
 local RunService = game:GetService("RunService")
 
+local resetPlayerData = script.Parent:WaitForChild("ResetPlayerData")
+
 local MAX_COINS_PER_COMMAND = 100000000
 
 -- Add extra Roblox UserIds here later if the game becomes group-owned.
@@ -58,9 +60,15 @@ end
 
 local function setupPlayer(player)
 	player.Chatted:Connect(function(message)
+		local isWipeCommand =
+			message == "/wipedata confirm"
+			or message == "!wipedata confirm"
+			or message == "/resetdata confirm"
+			or message == "!resetdata confirm"
+
 		local amount = parseCoinsCommand(message)
 
-		if not amount then
+		if not amount and not isWipeCommand then
 			return
 		end
 
@@ -75,6 +83,25 @@ local function setupPlayer(player)
 
 		if player:GetAttribute("DataLoaded") ~= true then
 			warn("Admin command ignored because data is still loading for " .. player.Name)
+			return
+		end
+
+		if isWipeCommand then
+			local success, errorMessage = resetPlayerData:Invoke(player)
+
+			if not success then
+				warn("Could not reset data for " .. player.Name .. ": " .. tostring(errorMessage))
+				return
+			end
+
+			print("🧹 ADMIN: " .. player.Name .. " wiped their own saved data.")
+
+			task.defer(function()
+				if player.Parent == Players then
+					player:Kick("Account data cleared. Rejoin to start fresh.")
+				end
+			end)
+
 			return
 		end
 
