@@ -1,5 +1,6 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local TweenService = game:GetService("TweenService")
 
 local player = Players.LocalPlayer
 local PetConfig = require(ReplicatedStorage:WaitForChild("Shared"):WaitForChild("PetConfig"))
@@ -120,6 +121,147 @@ list.Parent = panel
 local listCorner = Instance.new("UICorner")
 listCorner.CornerRadius = UDim.new(0, 14)
 listCorner.Parent = list
+
+local hatchOverlay = Instance.new("Frame")
+hatchOverlay.Name = "HatchOverlay"
+hatchOverlay.Size = UDim2.fromScale(1, 1)
+hatchOverlay.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+hatchOverlay.BackgroundTransparency = 0.32
+hatchOverlay.Visible = false
+hatchOverlay.ZIndex = 50
+hatchOverlay.Parent = gui
+
+local hatchCard = Instance.new("Frame")
+hatchCard.AnchorPoint = Vector2.new(0.5, 0.5)
+hatchCard.Position = UDim2.fromScale(0.5, 0.5)
+hatchCard.Size = UDim2.fromOffset(360, 330)
+hatchCard.BackgroundColor3 = Color3.fromRGB(28, 29, 38)
+hatchCard.ZIndex = 51
+hatchCard.Parent = hatchOverlay
+
+local hatchCardCorner = Instance.new("UICorner")
+hatchCardCorner.CornerRadius = UDim.new(0, 22)
+hatchCardCorner.Parent = hatchCard
+
+local eggIcon = Instance.new("TextLabel")
+eggIcon.AnchorPoint = Vector2.new(0.5, 0)
+eggIcon.Position = UDim2.new(0.5, 0, 0, 35)
+eggIcon.Size = UDim2.fromOffset(150, 150)
+eggIcon.BackgroundTransparency = 1
+eggIcon.Text = "🥚"
+eggIcon.TextScaled = true
+eggIcon.ZIndex = 52
+eggIcon.Parent = hatchCard
+
+local hatchTitle = Instance.new("TextLabel")
+hatchTitle.AnchorPoint = Vector2.new(0.5, 0)
+hatchTitle.Position = UDim2.new(0.5, 0, 0, 190)
+hatchTitle.Size = UDim2.new(1, -30, 0, 38)
+hatchTitle.BackgroundTransparency = 1
+hatchTitle.Text = "HATCHING..."
+hatchTitle.TextColor3 = Color3.new(1, 1, 1)
+hatchTitle.TextSize = 27
+hatchTitle.Font = Enum.Font.GothamBold
+hatchTitle.ZIndex = 52
+hatchTitle.Parent = hatchCard
+
+local hatchRarity = Instance.new("TextLabel")
+hatchRarity.AnchorPoint = Vector2.new(0.5, 0)
+hatchRarity.Position = UDim2.new(0.5, 0, 0, 230)
+hatchRarity.Size = UDim2.new(1, -30, 0, 32)
+hatchRarity.BackgroundTransparency = 1
+hatchRarity.Text = ""
+hatchRarity.TextSize = 20
+hatchRarity.Font = Enum.Font.GothamBold
+hatchRarity.ZIndex = 52
+hatchRarity.Parent = hatchCard
+
+local hatchMultiplier = Instance.new("TextLabel")
+hatchMultiplier.AnchorPoint = Vector2.new(0.5, 0)
+hatchMultiplier.Position = UDim2.new(0.5, 0, 0, 264)
+hatchMultiplier.Size = UDim2.new(1, -30, 0, 28)
+hatchMultiplier.BackgroundTransparency = 1
+hatchMultiplier.Text = ""
+hatchMultiplier.TextColor3 = Color3.fromRGB(255, 220, 80)
+hatchMultiplier.TextSize = 18
+hatchMultiplier.Font = Enum.Font.GothamBold
+hatchMultiplier.ZIndex = 52
+hatchMultiplier.Parent = hatchCard
+
+local function getRarityColor(rarity)
+	if rarity == "Legendary" then
+		return Color3.fromRGB(255, 195, 55)
+	elseif rarity == "Epic" then
+		return Color3.fromRGB(190, 95, 255)
+	elseif rarity == "Rare" then
+		return Color3.fromRGB(80, 165, 255)
+	else
+		return Color3.fromRGB(215, 215, 225)
+	end
+end
+
+local function showHatchAnimation(response)
+	hatchOverlay.Visible = true
+	hatchTitle.Text = "HATCHING..."
+	hatchTitle.TextColor3 = Color3.new(1, 1, 1)
+	hatchRarity.Text = ""
+	hatchMultiplier.Text = ""
+	eggIcon.Text = "🥚"
+	eggIcon.Rotation = 0
+	eggIcon.Size = UDim2.fromOffset(150, 150)
+
+	for index = 1, 4 do
+		local direction = index % 2 == 0 and -1 or 1
+		local shake = TweenService:Create(
+			eggIcon,
+			TweenInfo.new(0.12, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut),
+			{
+				Rotation = 12 * direction,
+				Size = UDim2.fromOffset(160, 160),
+			}
+		)
+		shake:Play()
+		shake.Completed:Wait()
+
+		local reset = TweenService:Create(
+			eggIcon,
+			TweenInfo.new(0.10, Enum.EasingStyle.Quad, Enum.EasingDirection.InOut),
+			{
+				Rotation = 0,
+				Size = UDim2.fromOffset(150, 150),
+			}
+		)
+		reset:Play()
+		reset.Completed:Wait()
+	end
+
+	eggIcon.Text = "✨"
+	hatchTitle.Text = response.DisplayName
+	hatchTitle.TextColor3 = getRarityColor(response.Rarity)
+	hatchRarity.Text = response.Rarity
+	hatchRarity.TextColor3 = getRarityColor(response.Rarity)
+	hatchMultiplier.Text = string.format("🐾 x%.2f Coins", response.Multiplier or 1)
+
+	local pop = TweenService:Create(
+		hatchCard,
+		TweenInfo.new(0.18, Enum.EasingStyle.Back, Enum.EasingDirection.Out),
+		{Size = UDim2.fromOffset(390, 350)}
+	)
+	pop:Play()
+	pop.Completed:Wait()
+
+	task.wait(1.6)
+
+	local shrink = TweenService:Create(
+		hatchCard,
+		TweenInfo.new(0.16, Enum.EasingStyle.Quad, Enum.EasingDirection.In),
+		{Size = UDim2.fromOffset(360, 330)}
+	)
+	shrink:Play()
+	shrink.Completed:Wait()
+
+	hatchOverlay.Visible = false
+end
 
 local layout = Instance.new("UIListLayout")
 layout.Padding = UDim.new(0, 8)
@@ -340,19 +482,28 @@ close.Activated:Connect(function()
 end)
 
 hatch.Activated:Connect(function()
+	if not hatch.Active then
+		return
+	end
+
 	hatch.Active = false
+	hatch.AutoButtonColor = false
 	hatch.Text = "HATCHING..."
 
 	local response = hatchEgg:InvokeServer("Starter")
 
 	if response and response.Success then
-		result.Text = string.format("🎉 You hatched %s! [%s]", response.DisplayName, response.Rarity)
+		result.Text = ""
+		panel.Visible = false
+		showHatchAnimation(response)
+		panel.Visible = true
 	else
 		result.Text = response and response.Message or "Hatch failed"
 	end
 
 	hatch.Text = "🥚 HATCH STARTER EGG — 500 COINS"
 	hatch.Active = true
+	hatch.AutoButtonColor = true
 	refresh()
 end)
 
