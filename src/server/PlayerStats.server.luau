@@ -18,6 +18,9 @@ local DEFAULT_DATA = {
 	LastDailyClaimDay = -1,
 	LuckBoosts = 0,
 	PetXPPotions = 0,
+	DailyQuestDay = -1,
+	DailyQuestProgress = {},
+	DailyQuestClaimed = {},
 }
 
 local saving = {}
@@ -73,6 +76,7 @@ local function createPlayerValues(player)
 
 	ensureFolder(player, "PetInventory")
 	ensureFolder(player, "EquippedPets")
+	ensureFolder(player, "DailyQuests")
 
 	player:SetAttribute("RoundHeight", 0)
 	player:SetAttribute("RoundCoins", 0)
@@ -91,6 +95,7 @@ local function createPlayerValues(player)
 	player:SetAttribute("LastDailyClaimDay", DEFAULT_DATA.LastDailyClaimDay)
 	player:SetAttribute("LuckBoosts", DEFAULT_DATA.LuckBoosts)
 	player:SetAttribute("PetXPPotions", DEFAULT_DATA.PetXPPotions)
+	player:SetAttribute("DailyQuestDay", DEFAULT_DATA.DailyQuestDay)
 	player:SetAttribute("DataLoaded", false)
 end
 
@@ -128,6 +133,45 @@ local function applyPetData(player, data)
 	end
 end
 
+local function applyQuestData(player, data)
+	local questsFolder = ensureFolder(player, "DailyQuests")
+	clearChildren(questsFolder)
+
+	local progressData = type(data.DailyQuestProgress) == "table" and data.DailyQuestProgress or {}
+	local claimedData = type(data.DailyQuestClaimed) == "table" and data.DailyQuestClaimed or {}
+
+	local questIds = {}
+
+	for questId in pairs(progressData) do
+		questIds[questId] = true
+	end
+
+	for questId in pairs(claimedData) do
+		questIds[questId] = true
+	end
+
+	for questId in pairs(questIds) do
+		local questFolder = Instance.new("Folder")
+		questFolder.Name = tostring(questId)
+		questFolder.Parent = questsFolder
+
+		local progress = Instance.new("IntValue")
+		progress.Name = "Progress"
+		progress.Value = math.max(0, math.floor(tonumber(progressData[questId]) or 0))
+		progress.Parent = questFolder
+
+		local claimed = Instance.new("BoolValue")
+		claimed.Name = "Claimed"
+		claimed.Value = claimedData[questId] == true
+		claimed.Parent = questFolder
+	end
+
+	player:SetAttribute(
+		"DailyQuestDay",
+		tonumber(data.DailyQuestDay) or DEFAULT_DATA.DailyQuestDay
+	)
+end
+
 local function applyData(player, data)
 	local leaderstats = player:FindFirstChild("leaderstats")
 	if not leaderstats then
@@ -144,6 +188,7 @@ local function applyData(player, data)
 	player:SetAttribute("PetXPPotions", tonumber(data.PetXPPotions) or DEFAULT_DATA.PetXPPotions)
 
 	applyPetData(player, data)
+	applyQuestData(player, data)
 end
 
 local function loadData(player)
@@ -162,6 +207,7 @@ local function loadData(player)
 			applyData(player, result)
 		else
 			applyPetData(player, DEFAULT_DATA)
+			applyQuestData(player, DEFAULT_DATA)
 		end
 
 		player:SetAttribute("DataLoaded", true)
@@ -170,6 +216,7 @@ local function loadData(player)
 		warn("Failed to load data for " .. player.Name .. ": " .. tostring(result))
 		warn("Using temporary default data for this session.")
 		applyPetData(player, DEFAULT_DATA)
+		applyQuestData(player, DEFAULT_DATA)
 		player:SetAttribute("DataLoaded", true)
 	end
 end
@@ -205,6 +252,28 @@ local function getPetData(player)
 	return inventory, equipped
 end
 
+local function getQuestData(player)
+	local progress = {}
+	local claimed = {}
+	local questsFolder = player:FindFirstChild("DailyQuests")
+
+	if questsFolder then
+		for _, questFolder in questsFolder:GetChildren() do
+			if questFolder:IsA("Folder") then
+				local progressValue = questFolder:FindFirstChild("Progress")
+				local claimedValue = questFolder:FindFirstChild("Claimed")
+
+				progress[questFolder.Name] =
+					progressValue and progressValue:IsA("IntValue") and progressValue.Value or 0
+				claimed[questFolder.Name] =
+					claimedValue and claimedValue:IsA("BoolValue") and claimedValue.Value or false
+			end
+		end
+	end
+
+	return progress, claimed
+end
+
 local function getCurrentData(player)
 	local leaderstats = player:FindFirstChild("leaderstats")
 	if not leaderstats then
@@ -220,6 +289,7 @@ local function getCurrentData(player)
 	end
 
 	local inventory, equipped = getPetData(player)
+	local questProgress, questClaimed = getQuestData(player)
 
 	return {
 		Coins = coins.Value,
@@ -232,6 +302,9 @@ local function getCurrentData(player)
 		LastDailyClaimDay = player:GetAttribute("LastDailyClaimDay") or DEFAULT_DATA.LastDailyClaimDay,
 		LuckBoosts = player:GetAttribute("LuckBoosts") or DEFAULT_DATA.LuckBoosts,
 		PetXPPotions = player:GetAttribute("PetXPPotions") or DEFAULT_DATA.PetXPPotions,
+		DailyQuestDay = player:GetAttribute("DailyQuestDay") or DEFAULT_DATA.DailyQuestDay,
+		DailyQuestProgress = questProgress,
+		DailyQuestClaimed = questClaimed,
 	}
 end
 
@@ -310,6 +383,12 @@ local function resetSessionValues(player)
 	player:SetAttribute("LastDailyClaimDay", DEFAULT_DATA.LastDailyClaimDay)
 	player:SetAttribute("LuckBoosts", DEFAULT_DATA.LuckBoosts)
 	player:SetAttribute("PetXPPotions", DEFAULT_DATA.PetXPPotions)
+	player:SetAttribute("DailyQuestDay", DEFAULT_DATA.DailyQuestDay)
+
+	local questsFolder = player:FindFirstChild("DailyQuests")
+	if questsFolder then
+		clearChildren(questsFolder)
+	end
 end
 
 resetPlayerData.OnInvoke = function(player)
