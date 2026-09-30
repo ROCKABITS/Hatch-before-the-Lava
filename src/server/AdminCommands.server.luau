@@ -4,6 +4,15 @@ local RunService = game:GetService("RunService")
 local resetPlayerData = script.Parent:WaitForChild("ResetPlayerData")
 
 local MAX_COINS_PER_COMMAND = 100000000
+local MAX_BOOSTS_PER_COMMAND = 100
+
+local BOOST_ATTRIBUTES = {
+	coin = "CoinBoosts",
+	coins = "CoinBoosts",
+	luck = "LuckBoosts",
+	petxp = "PetXPBoosts",
+	xp = "PetXPBoosts",
+}
 
 -- Add extra Roblox UserIds here later if the game becomes group-owned.
 local EXTRA_ADMIN_USER_IDS = {}
@@ -58,6 +67,32 @@ local function parseCoinsCommand(message)
 	return math.clamp(amount, 1, MAX_COINS_PER_COMMAND)
 end
 
+local function parseBoostCommand(message)
+	local boostType, amountText =
+		message:match("^/boost%s+(%w+)%s*(%d*)$")
+		or message:match("^!boost%s+(%w+)%s*(%d*)$")
+
+	if not boostType then
+		return nil
+	end
+
+	boostType = string.lower(boostType)
+	local attribute = BOOST_ATTRIBUTES[boostType]
+
+	if not attribute then
+		return nil
+	end
+
+	local amount = tonumber(amountText)
+	if not amount then
+		amount = 1
+	end
+
+	amount = math.clamp(math.floor(amount), 1, MAX_BOOSTS_PER_COMMAND)
+
+	return attribute, amount, boostType
+end
+
 local function setupPlayer(player)
 	player.Chatted:Connect(function(message)
 		local isWipeCommand =
@@ -67,8 +102,9 @@ local function setupPlayer(player)
 			or message == "!resetdata confirm"
 
 		local amount = parseCoinsCommand(message)
+		local boostAttribute, boostAmount, boostType = parseBoostCommand(message)
 
-		if not amount and not isWipeCommand then
+		if not amount and not isWipeCommand and not boostAttribute then
 			return
 		end
 
@@ -83,6 +119,20 @@ local function setupPlayer(player)
 
 		if player:GetAttribute("DataLoaded") ~= true then
 			warn("Admin command ignored because data is still loading for " .. player.Name)
+			return
+		end
+
+		if boostAttribute then
+			local current = player:GetAttribute(boostAttribute) or 0
+			player:SetAttribute(boostAttribute, current + boostAmount)
+
+			print(string.format(
+				"🛠️ ADMIN: %s added %d %s boost(s).",
+				player.Name,
+				boostAmount,
+				boostType
+			))
+
 			return
 		end
 
