@@ -74,6 +74,65 @@ local heightCorner = Instance.new("UICorner")
 heightCorner.CornerRadius = UDim.new(0, 14)
 heightCorner.Parent = height
 
+local podium = Instance.new("Frame")
+podium.Name = "RoundPodium"
+podium.AnchorPoint = Vector2.new(0.5, 0.5)
+podium.Position = UDim2.fromScale(0.5, 0.5)
+podium.Size = UDim2.fromOffset(440, 250)
+podium.BackgroundColor3 = Color3.fromRGB(25, 25, 30)
+podium.BackgroundTransparency = 0.08
+podium.Visible = false
+podium.Parent = gui
+
+local podiumCorner = Instance.new("UICorner")
+podiumCorner.CornerRadius = UDim.new(0, 18)
+podiumCorner.Parent = podium
+
+local podiumTitle = Instance.new("TextLabel")
+podiumTitle.BackgroundTransparency = 1
+podiumTitle.Position = UDim2.fromOffset(16, 12)
+podiumTitle.Size = UDim2.new(1, -32, 0, 42)
+podiumTitle.Text = "🏁 ROUND RESULTS"
+podiumTitle.TextColor3 = Color3.new(1, 1, 1)
+podiumTitle.TextSize = 28
+podiumTitle.Font = Enum.Font.GothamBold
+podiumTitle.Parent = podium
+
+local podiumRows = {}
+
+for place = 1, 3 do
+	local row = Instance.new("TextLabel")
+	row.BackgroundColor3 = Color3.fromRGB(45, 47, 58)
+	row.BackgroundTransparency = 0.08
+	row.Position = UDim2.fromOffset(18, 60 + ((place - 1) * 56))
+	row.Size = UDim2.new(1, -36, 0, 46)
+	row.TextColor3 = Color3.new(1, 1, 1)
+	row.TextSize = 20
+	row.TextXAlignment = Enum.TextXAlignment.Left
+	row.Font = Enum.Font.GothamBold
+	row.Parent = podium
+
+	local padding = Instance.new("UIPadding")
+	padding.PaddingLeft = UDim.new(0, 14)
+	padding.Parent = row
+
+	local corner = Instance.new("UICorner")
+	corner.CornerRadius = UDim.new(0, 10)
+	corner.Parent = row
+
+	podiumRows[place] = row
+end
+
+local podiumFooter = Instance.new("TextLabel")
+podiumFooter.BackgroundTransparency = 1
+podiumFooter.Position = UDim2.new(0, 16, 1, -42)
+podiumFooter.Size = UDim2.new(1, -32, 0, 28)
+podiumFooter.Text = "Next round soon..."
+podiumFooter.TextColor3 = Color3.fromRGB(190, 190, 205)
+podiumFooter.TextSize = 16
+podiumFooter.Font = Enum.Font.Gotham
+podiumFooter.Parent = podium
+
 local lavaPanel = Instance.new("Frame")
 lavaPanel.Name = "LavaProgress"
 lavaPanel.AnchorPoint = Vector2.new(0, 0.5)
@@ -195,6 +254,35 @@ local function updateStatus()
 	lavaPanel.Visible =
 		state == "LavaRising"
 		and player:GetAttribute("InRound") == true
+
+	podium.Visible = state == "RoundOver"
+
+	if podium.Visible then
+		local medals = {"🥇", "🥈", "🥉"}
+		local anyResult = false
+
+		for place = 1, 3 do
+			local name = gameState:GetAttribute("Top" .. place .. "Name") or ""
+			local resultHeight = gameState:GetAttribute("Top" .. place .. "Height") or 0
+			local escaped = gameState:GetAttribute("Top" .. place .. "Escaped") == true
+
+			if name ~= "" then
+				anyResult = true
+				podiumRows[place].Visible = true
+				podiumRows[place].Text = string.format(
+					"%s  %s  —  %dm%s",
+					medals[place],
+					name,
+					resultHeight,
+					escaped and "  🏆" or ""
+				)
+			else
+				podiumRows[place].Visible = false
+			end
+		end
+
+		podiumFooter.Text = anyResult and "Next round soon..." or "No one played this round."
+	end
 end
 
 local function updateStats()
@@ -233,7 +321,20 @@ local function updateLavaUI()
 	)
 end
 
-for _, attribute in {"State", "TimeLeft", "PlayersRemaining"} do
+for _, attribute in {
+	"State",
+	"TimeLeft",
+	"PlayersRemaining",
+	"Top1Name",
+	"Top1Height",
+	"Top1Escaped",
+	"Top2Name",
+	"Top2Height",
+	"Top2Escaped",
+	"Top3Name",
+	"Top3Height",
+	"Top3Escaped",
+} do
 	gameState:GetAttributeChangedSignal(attribute):Connect(updateStatus)
 end
 
