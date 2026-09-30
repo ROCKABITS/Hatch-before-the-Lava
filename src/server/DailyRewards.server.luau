@@ -91,18 +91,36 @@ local function addPet(player, petId)
 	return true
 end
 
-local function rollEggPet(eggId)
+local function getDropWeight(player, drop)
+	local weight = drop.Chance
+	local pet = PetConfig.Pets[drop.PetId]
+	local luckActive = (player:GetAttribute("ActiveLuckBoostUntil") or 0) > os.time()
+
+	if luckActive and pet and pet.Rarity ~= "Common" then
+		weight *= 2
+	end
+
+	return weight
+end
+
+local function rollEggPet(player, eggId)
 	local egg = PetConfig.Eggs[eggId]
 
 	if not egg or not egg.Drops or #egg.Drops == 0 then
 		return nil
 	end
 
-	local roll = random:NextNumber(0, 100)
+	local totalWeight = 0
+
+	for _, drop in ipairs(egg.Drops) do
+		totalWeight += getDropWeight(player, drop)
+	end
+
+	local roll = random:NextNumber(0, totalWeight)
 	local cumulative = 0
 
 	for _, drop in ipairs(egg.Drops) do
-		cumulative += drop.Chance
+		cumulative += getDropWeight(player, drop)
 
 		if roll <= cumulative then
 			return drop.PetId
@@ -137,7 +155,7 @@ local function grantReward(player, day)
 
 		return true, nil, reward.Display
 	elseif reward.Type == "Egg" then
-		local petId = rollEggPet(reward.EggId)
+		local petId = rollEggPet(player, reward.EggId)
 
 		if not petId then
 			return false, "Could not open reward egg"
