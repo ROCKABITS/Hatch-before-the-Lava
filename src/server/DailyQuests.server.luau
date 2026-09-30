@@ -179,6 +179,18 @@ local function grantReward(player, reward)
 			(player:GetAttribute("LuckBoosts") or 0) + reward.Amount
 		)
 		return true
+	elseif reward.Type == "CoinBoost" then
+		player:SetAttribute(
+			"CoinBoosts",
+			(player:GetAttribute("CoinBoosts") or 0) + reward.Amount
+		)
+		return true
+	elseif reward.Type == "PetXPBoost" then
+		player:SetAttribute(
+			"PetXPBoosts",
+			(player:GetAttribute("PetXPBoosts") or 0) + reward.Amount
+		)
+		return true
 	elseif reward.Type == "PetXPPotion" then
 		player:SetAttribute(
 			"PetXPPotions",
