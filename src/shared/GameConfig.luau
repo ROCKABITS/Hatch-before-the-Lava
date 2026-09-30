@@ -2,7 +2,7 @@ return {
 	MinimumPlayers = 1,
 	IntermissionTime = 15,
 	StartCountdown = 3,
-	PostRoundTime = 3,
+	PostRoundTime = 6,
 	HeightUpdateInterval = 0.10,
 	RoundStartPart = "RoundSpawn",
 
