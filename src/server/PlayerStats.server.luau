@@ -13,6 +13,7 @@ local DEFAULT_DATA = {
 	BestHeight = 0,
 	PetInventory = {},
 	EquippedPets = {},
+	TutorialSeen = false,
 }
 
 local saving = {}
@@ -73,6 +74,7 @@ local function createPlayerValues(player)
 	player:SetAttribute("AFKCoinsEarned", 0)
 	player:SetAttribute("AFKCoinsPerMinute", 0)
 	player:SetAttribute("AFKCoinsPerHour", 0)
+	player:SetAttribute("TutorialSeen", DEFAULT_DATA.TutorialSeen)
 	player:SetAttribute("DataLoaded", false)
 end
 
@@ -119,6 +121,7 @@ local function applyData(player, data)
 	leaderstats.Coins.Value = tonumber(data.Coins) or DEFAULT_DATA.Coins
 	leaderstats.Wins.Value = tonumber(data.Wins) or DEFAULT_DATA.Wins
 	leaderstats.BestHeight.Value = tonumber(data.BestHeight) or DEFAULT_DATA.BestHeight
+	player:SetAttribute("TutorialSeen", data.TutorialSeen == true)
 
 	applyPetData(player, data)
 end
@@ -204,6 +207,7 @@ local function getCurrentData(player)
 		BestHeight = bestHeight.Value,
 		PetInventory = inventory,
 		EquippedPets = equipped,
+		TutorialSeen = player:GetAttribute("TutorialSeen") == true,
 	}
 end
 
