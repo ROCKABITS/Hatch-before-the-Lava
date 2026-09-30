@@ -17,7 +17,12 @@ local DEFAULT_DATA = {
 	DailyRewardDay = 0,
 	LastDailyClaimDay = -1,
 	LuckBoosts = 0,
+	CoinBoosts = 0,
+	PetXPBoosts = 0,
 	PetXPPotions = 0,
+	ActiveCoinBoostUntil = 0,
+	ActivePetXPBoostUntil = 0,
+	ActiveLuckBoostUntil = 0,
 	DailyQuestDay = -1,
 	DailyQuestProgress = {},
 	DailyQuestClaimed = {},
@@ -94,7 +99,12 @@ local function createPlayerValues(player)
 	player:SetAttribute("DailyRewardDay", DEFAULT_DATA.DailyRewardDay)
 	player:SetAttribute("LastDailyClaimDay", DEFAULT_DATA.LastDailyClaimDay)
 	player:SetAttribute("LuckBoosts", DEFAULT_DATA.LuckBoosts)
+	player:SetAttribute("CoinBoosts", DEFAULT_DATA.CoinBoosts)
+	player:SetAttribute("PetXPBoosts", DEFAULT_DATA.PetXPBoosts)
 	player:SetAttribute("PetXPPotions", DEFAULT_DATA.PetXPPotions)
+	player:SetAttribute("ActiveCoinBoostUntil", DEFAULT_DATA.ActiveCoinBoostUntil)
+	player:SetAttribute("ActivePetXPBoostUntil", DEFAULT_DATA.ActivePetXPBoostUntil)
+	player:SetAttribute("ActiveLuckBoostUntil", DEFAULT_DATA.ActiveLuckBoostUntil)
 	player:SetAttribute("DailyQuestDay", DEFAULT_DATA.DailyQuestDay)
 	player:SetAttribute("DataLoaded", false)
 end
@@ -185,7 +195,12 @@ local function applyData(player, data)
 	player:SetAttribute("DailyRewardDay", tonumber(data.DailyRewardDay) or DEFAULT_DATA.DailyRewardDay)
 	player:SetAttribute("LastDailyClaimDay", tonumber(data.LastDailyClaimDay) or DEFAULT_DATA.LastDailyClaimDay)
 	player:SetAttribute("LuckBoosts", tonumber(data.LuckBoosts) or DEFAULT_DATA.LuckBoosts)
+	player:SetAttribute("CoinBoosts", tonumber(data.CoinBoosts) or DEFAULT_DATA.CoinBoosts)
+	player:SetAttribute("PetXPBoosts", tonumber(data.PetXPBoosts) or DEFAULT_DATA.PetXPBoosts)
 	player:SetAttribute("PetXPPotions", tonumber(data.PetXPPotions) or DEFAULT_DATA.PetXPPotions)
+	player:SetAttribute("ActiveCoinBoostUntil", tonumber(data.ActiveCoinBoostUntil) or DEFAULT_DATA.ActiveCoinBoostUntil)
+	player:SetAttribute("ActivePetXPBoostUntil", tonumber(data.ActivePetXPBoostUntil) or DEFAULT_DATA.ActivePetXPBoostUntil)
+	player:SetAttribute("ActiveLuckBoostUntil", tonumber(data.ActiveLuckBoostUntil) or DEFAULT_DATA.ActiveLuckBoostUntil)
 
 	applyPetData(player, data)
 	applyQuestData(player, data)
@@ -301,7 +316,12 @@ local function getCurrentData(player)
 		DailyRewardDay = player:GetAttribute("DailyRewardDay") or DEFAULT_DATA.DailyRewardDay,
 		LastDailyClaimDay = player:GetAttribute("LastDailyClaimDay") or DEFAULT_DATA.LastDailyClaimDay,
 		LuckBoosts = player:GetAttribute("LuckBoosts") or DEFAULT_DATA.LuckBoosts,
+		CoinBoosts = player:GetAttribute("CoinBoosts") or DEFAULT_DATA.CoinBoosts,
+		PetXPBoosts = player:GetAttribute("PetXPBoosts") or DEFAULT_DATA.PetXPBoosts,
 		PetXPPotions = player:GetAttribute("PetXPPotions") or DEFAULT_DATA.PetXPPotions,
+		ActiveCoinBoostUntil = player:GetAttribute("ActiveCoinBoostUntil") or DEFAULT_DATA.ActiveCoinBoostUntil,
+		ActivePetXPBoostUntil = player:GetAttribute("ActivePetXPBoostUntil") or DEFAULT_DATA.ActivePetXPBoostUntil,
+		ActiveLuckBoostUntil = player:GetAttribute("ActiveLuckBoostUntil") or DEFAULT_DATA.ActiveLuckBoostUntil,
 		DailyQuestDay = player:GetAttribute("DailyQuestDay") or DEFAULT_DATA.DailyQuestDay,
 		DailyQuestProgress = questProgress,
 		DailyQuestClaimed = questClaimed,
@@ -382,7 +402,12 @@ local function resetSessionValues(player)
 	player:SetAttribute("DailyRewardDay", DEFAULT_DATA.DailyRewardDay)
 	player:SetAttribute("LastDailyClaimDay", DEFAULT_DATA.LastDailyClaimDay)
 	player:SetAttribute("LuckBoosts", DEFAULT_DATA.LuckBoosts)
+	player:SetAttribute("CoinBoosts", DEFAULT_DATA.CoinBoosts)
+	player:SetAttribute("PetXPBoosts", DEFAULT_DATA.PetXPBoosts)
 	player:SetAttribute("PetXPPotions", DEFAULT_DATA.PetXPPotions)
+	player:SetAttribute("ActiveCoinBoostUntil", DEFAULT_DATA.ActiveCoinBoostUntil)
+	player:SetAttribute("ActivePetXPBoostUntil", DEFAULT_DATA.ActivePetXPBoostUntil)
+	player:SetAttribute("ActiveLuckBoostUntil", DEFAULT_DATA.ActiveLuckBoostUntil)
 	player:SetAttribute("DailyQuestDay", DEFAULT_DATA.DailyQuestDay)
 
 	local questsFolder = player:FindFirstChild("DailyQuests")
