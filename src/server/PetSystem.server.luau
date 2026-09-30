@@ -170,12 +170,34 @@ local function addPet(player, petId)
 	return true
 end
 
-local function rollPet(egg)
-	local roll = random:NextNumber(0, 100)
+local function isLuckBoostActive(player)
+	return (player:GetAttribute("ActiveLuckBoostUntil") or 0) > os.time()
+end
+
+local function getDropWeight(player, drop)
+	local weight = drop.Chance
+	local pet = PetConfig.Pets[drop.PetId]
+
+	if isLuckBoostActive(player) and pet and pet.Rarity ~= "Common" then
+		weight *= 2
+	end
+
+	return weight
+end
+
+local function rollPet(player, egg)
+	local totalWeight = 0
+
+	for _, drop in ipairs(egg.Drops) do
+		totalWeight += getDropWeight(player, drop)
+	end
+
+	local roll = random:NextNumber(0, totalWeight)
 	local cumulative = 0
 
 	for _, drop in ipairs(egg.Drops) do
-		cumulative += drop.Chance
+		cumulative += getDropWeight(player, drop)
+
 		if roll <= cumulative then
 			return drop.PetId
 		end
@@ -254,7 +276,7 @@ hatchEgg.OnServerInvoke = function(player, eggId)
 
 	coins.Value -= egg.Price
 
-	local petId = rollPet(egg)
+	local petId = rollPet(player, egg)
 	if not addPet(player, petId) then
 		coins.Value += egg.Price
 		return { Success = false, Message = "Could not add pet" }
