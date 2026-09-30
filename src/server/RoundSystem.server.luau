@@ -18,6 +18,12 @@ gameState:SetAttribute("TimeLeft", 0)
 gameState:SetAttribute("PlayersRemaining", 0)
 gameState:SetAttribute("RoundNumber", 0)
 
+for place = 1, 3 do
+	gameState:SetAttribute("Top" .. place .. "Name", "")
+	gameState:SetAttribute("Top" .. place .. "Height", 0)
+	gameState:SetAttribute("Top" .. place .. "Escaped", false)
+end
+
 local currentRound = {}
 local roundActive = false
 local roundToken = 0
@@ -239,6 +245,48 @@ local function registerPlayersStandingOnStart()
 	end
 end
 
+local function clearRoundResults()
+	for place = 1, 3 do
+		gameState:SetAttribute("Top" .. place .. "Name", "")
+		gameState:SetAttribute("Top" .. place .. "Height", 0)
+		gameState:SetAttribute("Top" .. place .. "Escaped", false)
+	end
+end
+
+local function publishRoundResults()
+	local ranking = {}
+
+	for player, data in pairs(currentRound) do
+		table.insert(ranking, {
+			player = player,
+			height = data.maxHeight or 0,
+			escaped = data.escaped == true,
+		})
+	end
+
+	table.sort(ranking, function(a, b)
+		if a.height ~= b.height then
+			return a.height > b.height
+		end
+
+		if a.escaped ~= b.escaped then
+			return a.escaped
+		end
+
+		return a.player.UserId < b.player.UserId
+	end)
+
+	clearRoundResults()
+
+	for place = 1, math.min(3, #ranking) do
+		local entry = ranking[place]
+
+		gameState:SetAttribute("Top" .. place .. "Name", entry.player.DisplayName)
+		gameState:SetAttribute("Top" .. place .. "Height", entry.height)
+		gameState:SetAttribute("Top" .. place .. "Escaped", entry.escaped)
+	end
+end
+
 local function cleanupRound()
 	for player, data in pairs(currentRound) do
 		if data.deathConnection then
@@ -298,6 +346,7 @@ end
 local function runRound()
 	LavaSystem.Reset()
 	cleanupRound()
+	clearRoundResults()
 
 	countdown("Intermission", GameConfig.IntermissionTime)
 
@@ -331,6 +380,7 @@ local function runRound()
 		end
 	end
 
+	publishRoundResults()
 	setState("RoundOver", GameConfig.PostRoundTime)
 	print("🏁 ROUND OVER!")
 
