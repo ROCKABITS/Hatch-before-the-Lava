@@ -53,6 +53,17 @@ return {
 				Glow = true,
 			},
 		},
+		LavaDragon = {
+			DisplayName = "Lava Dragon",
+			Rarity = "Special",
+			CoinMultiplier = 2.25,
+			Visual = {
+				BodyColor = Color3.fromRGB(92, 35, 30),
+				AccentColor = Color3.fromRGB(255, 92, 35),
+				Scale = 1.25,
+				Glow = true,
+			},
+		},
 	},
 
 	Eggs = {
