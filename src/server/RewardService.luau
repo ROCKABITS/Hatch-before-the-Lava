@@ -27,9 +27,24 @@ function RewardService.GetPetMultiplier(player)
 	return multiplier
 end
 
+function RewardService.GetCoinBoostMultiplier(player)
+	local activeUntil = player:GetAttribute("ActiveCoinBoostUntil") or 0
+
+	if activeUntil > os.time() then
+		return 2
+	end
+
+	return 1
+end
+
 function RewardService.CalculateCoins(player, baseAmount)
-	local multiplier = RewardService.GetPetMultiplier(player)
-	return math.max(0, math.floor(baseAmount * multiplier))
+	local petMultiplier = RewardService.GetPetMultiplier(player)
+	local boostMultiplier = RewardService.GetCoinBoostMultiplier(player)
+
+	return math.max(
+		0,
+		math.floor(baseAmount * petMultiplier * boostMultiplier)
+	)
 end
 
 function RewardService.AddCoins(player, baseAmount)
