@@ -23,9 +23,12 @@ return {
 		StartHeight = 1,
 		MaxHeight = 255,
 
+		-- CONFIGURAÇÃO RÁPIDA
+		DamageEnabled = true, -- true = mata ao tocar / false = não dá dano
+		SpeedMultiplier = 1, -- 0.5 = metade / 1 = normal / 2 = dobro
 		CanCollide = true,
-		KillOnTouch = true,
 
+		-- Velocidades base das 3 fases
 		SlowSpeed = 1.5,
 		NormalSpeed = 2.5,
 		FastSpeed = 4,
