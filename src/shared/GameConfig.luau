@@ -23,9 +23,8 @@ return {
 		StartHeight = 1,
 		MaxHeight = 255,
 
-		-- Test settings
 		CanCollide = true,
-		KillOnTouch = false,
+		KillOnTouch = true,
 
 		SlowSpeed = 1.5,
 		NormalSpeed = 2.5,
