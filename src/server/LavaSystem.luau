@@ -19,13 +19,17 @@ local function applySettings()
 end
 
 local function getSpeed(progress)
+	local baseSpeed
+
 	if progress < GameConfig.Lava.SlowUntil then
-		return GameConfig.Lava.SlowSpeed
+		baseSpeed = GameConfig.Lava.SlowSpeed
 	elseif progress < GameConfig.Lava.NormalUntil then
-		return GameConfig.Lava.NormalSpeed
+		baseSpeed = GameConfig.Lava.NormalSpeed
 	else
-		return GameConfig.Lava.FastSpeed
+		baseSpeed = GameConfig.Lava.FastSpeed
 	end
+
+	return baseSpeed * (GameConfig.Lava.SpeedMultiplier or 1)
 end
 
 local function getProgress()
@@ -41,7 +45,7 @@ local function getProgress()
 end
 
 local function damageCharacterFromPart(hit)
-	if not GameConfig.Lava.KillOnTouch then
+	if not GameConfig.Lava.DamageEnabled then
 		return
 	end
 
@@ -57,7 +61,7 @@ local function damageCharacterFromPart(hit)
 end
 
 local function damagePlayersInsideLava()
-	if not GameConfig.Lava.KillOnTouch then
+	if not GameConfig.Lava.DamageEnabled then
 		return
 	end
 
