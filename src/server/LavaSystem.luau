@@ -14,6 +14,8 @@ local touchConnection = nil
 
 local function applySettings()
 	lava.CanCollide = GameConfig.Lava.CanCollide
+	lava.CanTouch = true
+	lava.CanQuery = true
 end
 
 local function getSpeed(progress)
@@ -38,25 +40,39 @@ local function getProgress()
 	return math.clamp((currentHeight - startHeight) / (maxHeight - startHeight), 0, 1)
 end
 
+local function damageCharacterFromPart(hit)
+	if not GameConfig.Lava.KillOnTouch then
+		return
+	end
+
+	local character = hit and hit:FindFirstAncestorOfClass("Model")
+	if not character then
+		return
+	end
+
+	local humanoid = character:FindFirstChildOfClass("Humanoid")
+	if humanoid and humanoid.Health > 0 then
+		humanoid.Health = 0
+	end
+end
+
+local function damagePlayersInsideLava()
+	if not GameConfig.Lava.KillOnTouch then
+		return
+	end
+
+	for _, part in workspace:GetPartsInPart(lava) do
+		damageCharacterFromPart(part)
+	end
+end
+
 local function connectDamage()
 	if touchConnection then
 		return
 	end
 
 	touchConnection = lava.Touched:Connect(function(hit)
-		if not GameConfig.Lava.KillOnTouch then
-			return
-		end
-
-		local character = hit:FindFirstAncestorOfClass("Model")
-		if not character then
-			return
-		end
-
-		local humanoid = character:FindFirstChildOfClass("Humanoid")
-		if humanoid and humanoid.Health > 0 then
-			humanoid.Health = 0
-		end
+		damageCharacterFromPart(hit)
 	end)
 end
 
@@ -98,6 +114,10 @@ function LavaSystem.Start()
 
 		lava.Size += Vector3.new(0, increase, 0)
 		lava.Position += Vector3.new(0, increase / 2, 0)
+
+		-- Touched can miss stationary players when an anchored Part grows into them,
+		-- so also check everything currently overlapping the lava.
+		damagePlayersInsideLava()
 	end
 
 	running = false
